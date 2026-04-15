@@ -110,6 +110,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using UNAPLANNER_API.Data;
+using UNAPLANNER_API.Repositories;
+using UNAPLANNER_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +121,10 @@ builder.Services.AddControllers();
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Repositories & Services
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -188,10 +194,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthentication();   
-app.UseAuthorization();    
+// 🔥 ESTO ES OBLIGATORIO
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

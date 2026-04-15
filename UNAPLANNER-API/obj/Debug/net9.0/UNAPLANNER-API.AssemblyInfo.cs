@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UNAPLANNER-API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ee6326cb3e88dec22ef820089e8dcce576c56e7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+68cb9c9ca40420d61edd42e4af63564fc567da8d")]
 [assembly: System.Reflection.AssemblyProductAttribute("UNAPLANNER-API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UNAPLANNER-API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
