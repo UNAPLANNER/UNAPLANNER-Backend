@@ -5,9 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Repositories;
+using UNAPLANNER_API.Models.Entities;
 
 
 namespace UNAPLANNER_API.Services;
+
 public class AuthService : IAuthService
 {
     private readonly IAuthRepository _userRepository;
@@ -51,4 +53,32 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
     }
+    public async Task<UserResponse> RegisterUser(UserRegisterRequest request)
+    {
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
+            throw new InvalidOperationException("El correo ya está registrado.");
+
+        var user = new User
+        {
+            RoleId = request.RoleId,
+            Email = request.Email,
+            Password = PasswordHelper.HashPassword(request.Password),
+            IsStatus = true,
+            CreatedDate = DateTime.Now
+        };
+
+        var createdUser = await _userRepository.AddUser(user);
+
+        return new UserResponse
+        {
+            UserId = createdUser.UserId,
+            RoleId = createdUser.RoleId,
+            Email = createdUser.Email,
+            IsStatus = createdUser.IsStatus,
+            CreatedDate = createdUser.CreatedDate
+        };
+    }
+
+
 }
