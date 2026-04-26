@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 namespace UNAPLANNER_API.DTOs.Requests;
 
-public class UserRegisterRequest
+public class CreateUserRequest
 {
     public int RoleId { get; set; }
 

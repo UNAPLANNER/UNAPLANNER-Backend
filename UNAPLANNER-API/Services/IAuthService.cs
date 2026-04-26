@@ -6,5 +6,5 @@ namespace UNAPLANNER_API.Services;
 public interface IAuthService
 {
     Task<AuthResponse?> LoginAsync(LoginRequest request);
-    Task<UserResponse> RegisterUser(UserRegisterRequest request);
+    Task<UserResponse> RegisterUser(CreateUserRequest request);
 }
