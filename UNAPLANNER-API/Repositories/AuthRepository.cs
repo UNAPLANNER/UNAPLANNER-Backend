@@ -26,5 +26,11 @@ public class AuthRepository : IAuthRepository
         return await _context.Users
             .FirstOrDefaultAsync(u => u.UserId == id);
     }
+    public async Task DeleteUser(User user)
+    {
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+    }
+
 
 }

@@ -15,4 +15,10 @@ public class User
 
     // Relación (muchos a 1)
     public Role Role { get; set; } = null!;
+
+    /*public ICollection<Progress> Progress { get; set; }
+    public ICollection<Evaluation> Evaluations { get; set; }
+    public ICollection<Grade> Grades { get; set; }
+    public ICollection<FileEntity> Files { get; set; }
+    public ICollection<CalendarEvent> CalendarEvents { get; set; }*/
 }
