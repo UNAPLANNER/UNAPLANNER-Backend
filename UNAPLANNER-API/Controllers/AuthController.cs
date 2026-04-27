@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Services;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace UNAPLANNER_API.Controllers;
 
@@ -16,7 +18,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-   
+
     [HttpPost("login")]
 
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -36,5 +38,39 @@ public class AuthController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
+    {
+    
+        if (!ModelState.IsValid)
+        {
+            var error = new
+            {
+                message = "Datos inválidos en la solicitud",
+                errors = ModelState.Values
+                                   .SelectMany(v => v.Errors)
+                                   .Select(e => e.ErrorMessage)
+            };
+
+            return BadRequest(error);
+        }
+
+        try
+        {
+            var response = await _authService.RegisterUser(request);
+            return CreatedAtAction(nameof(Register), new
+            {
+                message = "Usuario creado exitosamente",
+                data = response
+            });
+
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 }

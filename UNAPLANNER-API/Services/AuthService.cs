@@ -25,7 +25,11 @@ public class AuthService : IAuthService
     {
         var user = await _userRepository.GetByEmailAsync(request.Email);
 
-        if (user == null || user.Password != request.Password)
+        if (user == null) return null;
+
+        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+
+        if (!isPasswordValid)
             return null;
 
         var claims = new List<Claim>
@@ -53,7 +57,7 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
     }
-    public async Task<UserResponse> RegisterUser(UserRegisterRequest request)
+    public async Task<UserResponse> RegisterUser(CreateUserRequest request)
     {
         var existingUser = await _userRepository.GetByEmailAsync(request.Email);
         if (existingUser != null)
