@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Repositories;
+/*using UNAPLANNER_API.Helpers;*/
+
 
 
 namespace UNAPLANNER_API.Services;
@@ -51,4 +53,27 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
     }
+
+    public async Task<DeleteUserResponse> DeleteUserService(int id, string currentPassword)
+{
+    var user = await _userRepository.GetByIdAsync(id);
+    if (user == null)
+        throw new Exception("Usuario no encontrado");
+
+    /*var isValid = PasswordHelper.VerifyPassword(currentPassword, user.Password);*/
+    /*if (!isValid)
+        throw new UnauthorizedAccessException("Contraseña incorrecta");
+
+    await _userRepository.DeleteUser(user);*/
+
+    return new DeleteUserResponse
+    { 
+        UserId = user.UserId, 
+        Message = "Usuario eliminado correctamente" 
+    };
+}
+
+
+    
+
 }

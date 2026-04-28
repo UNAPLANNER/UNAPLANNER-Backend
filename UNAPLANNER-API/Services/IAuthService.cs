@@ -6,4 +6,6 @@ namespace UNAPLANNER_API.Services;
 public interface IAuthService
 {
     Task<AuthResponse?> LoginAsync(LoginRequest request);
+    Task<DeleteUserResponse> DeleteUserService(int idUser, string exitingPassword);
+
 }
