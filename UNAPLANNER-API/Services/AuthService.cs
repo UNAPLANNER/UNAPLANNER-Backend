@@ -6,7 +6,8 @@ using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Repositories;
 using UNAPLANNER_API.Models.Entities;
-
+using UNAPLANNER_API.Mappers;
+using UNAPLANNER_API.Constants;
 
 namespace UNAPLANNER_API.Services;
 
@@ -14,10 +15,12 @@ public class AuthService : IAuthService
 {
     private readonly IAuthRepository _userRepository;
     private readonly IConfiguration _config;
+    private readonly IStudentRepository _studentRepository;
 
-    public AuthService(IAuthRepository userRepository, IConfiguration config)
+    public AuthService(IAuthRepository userRepository, IStudentRepository studentRepository, IConfiguration config)
     {
         _userRepository = userRepository;
+        _studentRepository = studentRepository;
         _config = config;
     }
 
@@ -53,7 +56,7 @@ public class AuthService : IAuthService
         {
             UserId = user.UserId,
             Email = user.Email,
-            Role = user.Role.TypeRole,
+            Role = user.RoleId == RoleContants.Admin ? "Admin" : "Student",
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
     }
@@ -63,6 +66,7 @@ public class AuthService : IAuthService
         if (existingUser != null)
             throw new InvalidOperationException("El correo ya está registrado.");
 
+
         var user = new User
         {
             RoleId = request.RoleId,
@@ -71,16 +75,27 @@ public class AuthService : IAuthService
             IsStatus = true,
             CreatedDate = DateTime.Now
         };
-
         var createdUser = await _userRepository.AddUser(user);
 
+        if (request.RoleId == RoleContants.Student)
+        {
+            var student = new Student
+            {
+                UserId = createdUser.UserId,
+                FullName = request.FullName!,
+                CareerId = request.CareerId!.Value,
+                StudyPlanId = request.StudyPlanId!.Value,
+                EnterYear = request.EnterYear!.Value
+            };
+            await _studentRepository.AddStudent(student);
+        }
         return new UserResponse
         {
             UserId = createdUser.UserId,
-            RoleId = createdUser.RoleId,
             Email = createdUser.Email,
-            IsStatus = createdUser.IsStatus,
-            CreatedDate = createdUser.CreatedDate
+            RoleId = createdUser.RoleId,
+            Role = createdUser.RoleId == RoleContants.Admin ? "Admin" : "Student",
+            IsStatus = createdUser.IsStatus
         };
     }
 

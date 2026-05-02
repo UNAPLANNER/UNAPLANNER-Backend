@@ -8,6 +8,7 @@ using UNAPLANNER_API.Data;
 using UNAPLANNER_API.Repositories;
 using UNAPLANNER_API.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
@@ -20,12 +21,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories & Services
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
+    
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "UNAPlanner API",
@@ -57,6 +60,7 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+    c.EnableAnnotations();
 });
 
 // JWT

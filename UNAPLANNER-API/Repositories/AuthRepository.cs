@@ -21,6 +21,7 @@ public class AuthRepository : IAuthRepository
     public async Task<User?> GetByIdAsync(int id)
     {
         return await _context.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.UserId == id);
     }
     public async Task<User> AddUser(User user)

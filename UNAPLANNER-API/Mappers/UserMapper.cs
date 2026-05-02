@@ -11,7 +11,7 @@ public static class UserMapper
         return new UserResponse
         {
             UserId = user.UserId,
-            RoleId = user.RoleId,
+            Role = user.RoleId == 1 ? "Student" : "Admin",
             Email = user.Email,
             IsStatus = user.IsStatus,
             CreatedDate = user.CreatedDate
@@ -22,7 +22,7 @@ public static class UserMapper
     {
         return new User
         {
-            RoleId = request.RoleId,
+            RoleId = 1,
             Email = request.Email,
             Password = PasswordHelper.HashPassword(request.Password),
             IsStatus = true,

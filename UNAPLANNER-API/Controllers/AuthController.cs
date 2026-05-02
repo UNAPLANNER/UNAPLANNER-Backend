@@ -3,6 +3,7 @@ using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Services;
 using Microsoft.AspNetCore.Authorization;
+using UNAPLANNER_API.Constants;
 
 
 namespace UNAPLANNER_API.Controllers;
@@ -44,7 +45,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
-    
+
         if (!ModelState.IsValid)
         {
             var error = new
@@ -60,10 +61,11 @@ public class AuthController : ControllerBase
 
         try
         {
+            request.RoleId = RoleContants.Student;
             var response = await _authService.RegisterUser(request);
             return CreatedAtAction(nameof(Register), new
             {
-                message = "Usuario creado exitosamente",
+                message = "Estudiante creado exitosamente",
                 data = response
             });
 
@@ -73,4 +75,6 @@ public class AuthController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
+
+    
 }
