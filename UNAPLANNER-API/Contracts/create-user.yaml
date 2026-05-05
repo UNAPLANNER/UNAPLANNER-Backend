@@ -1,0 +1,92 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API
+  description: |
+    API RESTful para la plataforma UNAPLANNER de control académico.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registrar nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        "400":
+          description: Datos inválidos en la solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "409":
+          description: Conflicto, el correo ya está registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - roleId
+        - email
+        - password
+      properties:
+        roleId:
+          type: integer
+          example: 2
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "123456"
+
+    AuthResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          example: 1
+        roleId:
+          type: integer
+          example: 2
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        isStatus:
+          type: boolean
+          example: true
+        createdDate:
+          type: string
+          format: date-time
+          example: "2026-04-25T20:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Descripción del error aquí"
+        code:
+          type: integer
+          example: 400
