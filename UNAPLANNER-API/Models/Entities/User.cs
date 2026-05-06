@@ -15,4 +15,13 @@ public class User
 
     // Relación (muchos a 1)
     public Role Role { get; set; } = null!;
+    public Student Student { get; set; } = null!;
+
+    
+    public ICollection<AdminLog> AdminLogs { get; set; } = new List<AdminLog>();
+    public ICollection<File> Files { get; set; } = new List<File>();
+    public ICollection<Calendar> Calendars { get; set; } = new List<Calendar>();
+    public ICollection<Note> Notes { get; set; } = new List<Note>();
+    public ICollection<NotificationToken> NotificationTokens { get; set; } = new List<NotificationToken>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
