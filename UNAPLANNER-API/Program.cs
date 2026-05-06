@@ -22,6 +22,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<ICampusContactRepository, CampusContactRepository>();
+builder.Services.AddScoped<ICampusContactService, CampusContactService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
