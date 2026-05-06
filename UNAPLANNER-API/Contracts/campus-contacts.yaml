@@ -1,0 +1,116 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API
+  version: 1.0.0
+  description: |
+    API RESTful para la plataforma UNAPLANNER de control académico.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /campus-contacts:
+    get:
+      tags: [Campus Contacts]
+      summary: Obtener todos los contactos de campus
+      description: Obtiene una lista de todos los contactos de campus disponibles, ordenados por nombre de departamento.
+      responses:
+        "200":
+          description: Lista de contactos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampusContactResponse'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /campus-contacts/campus/{campusId}:
+    get:
+      tags: [Campus Contacts]
+      summary: Obtener contactos de un campus específico
+      description: Obtiene todos los contactos de un campus en particular, ordenados por nombre de departamento.
+      parameters:
+        - name: campusId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del campus
+      responses:
+        "200":
+          description: Lista de contactos del campus obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampusContactResponse'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /campus-contacts/{id}:
+    get:
+      tags: [Campus Contacts]
+      summary: Obtener un contacto específico
+      description: Obtiene los detalles de un contacto de campus por su ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del contacto
+      responses:
+        "200":
+          description: Contacto obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusContactResponse'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    CampusContactResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del contacto
+        campusId:
+          type: integer
+          description: ID del campus
+        departamentName:
+          type: string
+          description: Nombre del departamento
+        phone:
+          type: string
+          nullable: true
+          description: Teléfono del departamento
+        email:
+          type: string
+          nullable: true
+          description: Email del departamento
+        description:
+          type: string
+          nullable: true
+          description: Descripción adicional del contacto
+        isStatus:
+          type: boolean
+          description: Estado activo del contacto
+        createdDate:
+          type: string
+          format: date-time
+          description: Fecha de creación del contacto
+
+  responses:
+    NotFound:
+      description: Recurso no encontrado.
+    InternalServerError:
+      description: Error interno del servidor.
