@@ -7,9 +7,15 @@ using Microsoft.OpenApi.Models;
 using UNAPLANNER_API.Data;
 using UNAPLANNER_API.Repositories;
 using UNAPLANNER_API.Services;
+using UNAPLANNER_API.Constants;
+using UNAPLANNER_API.Models.Entities;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+//appsentings password and email
+var adminEmail = builder.Configuration["AdminSettings:Email"];
+var adminPassword = builder.Configuration["AdminSettings:Password"];
 
 // Controllers
 builder.Services.AddControllers();
@@ -89,6 +95,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+//email y contraseña del admin por defecto
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext >();
+
+    if (!context.Users.Any(u => u.Email == adminEmail))
+    {
+        var admin = new User
+        {
+            Email = adminEmail!,
+            Password = BCrypt.Net.BCrypt.HashPassword(adminPassword!),
+            RoleId = RoleContants.Admin,
+            IsStatus = true,
+            CreatedDate = DateTime.Now
+        };
+
+        context.Users.Add(admin);
+        context.SaveChanges();
+    }
+}
+
 
 // Swagger
 if (app.Environment.IsDevelopment())
