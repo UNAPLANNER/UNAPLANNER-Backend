@@ -35,11 +35,16 @@ public class AuthService : IAuthService
         if (!isPasswordValid)
             return null;
 
+         var roleName = user.RoleId == RoleContants.Admin
+            ? "Admin"
+            : "Student";
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.TypeRole)
+            new Claim(ClaimTypes.Role, user.Role.TypeRole),
+            new Claim(ClaimTypes.Role, roleName) 
         };
 
         var key = new SymmetricSecurityKey(
