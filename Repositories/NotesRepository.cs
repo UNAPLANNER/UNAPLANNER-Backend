@@ -32,4 +32,19 @@ public class NotesRepository : INotesRepository
 
         return await query.ToListAsync();
     }
+
+    public async Task<Note?> CreateNoteAsync(Note note)
+    {
+        try
+        {
+            _context.Notes.Add(note);
+            await _context.SaveChangesAsync();
+            return note;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }
+
