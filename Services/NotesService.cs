@@ -35,6 +35,7 @@ public class NotesService : INotesService
                 Title = n.Title,
                 Content = n.Content,
                 CourseId = n.CourseId,
+                CourseName = n.Course?.Name ?? "General",
                 CreatedAt = n.CreatedAt,
                 UpdatedAt = n.LastUpdated
             }).ToList();
@@ -90,6 +91,7 @@ public class NotesService : INotesService
                 Title = createdNote.Title,
                 Content = createdNote.Content,
                 CourseId = createdNote.CourseId,
+                CourseName = createdNote.Course?.Name ?? "General",
                 CreatedAt = createdNote.CreatedAt,
                 UpdatedAt = createdNote.LastUpdated
             };
@@ -99,6 +101,91 @@ public class NotesService : INotesService
         catch (Exception ex)
         {
             return (false, null, $"Error al crear la nota: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, UpdateNoteRequest request)
+    {
+        try
+        {
+            // Validar que la nota existe
+            var note = await _notesRepository.GetNoteByIdAsync(noteId);
+            if (note == null)
+            {
+                return (false, null, $"Nota con ID {noteId} no encontrada.");
+            }
+
+            // Validar que el título no esté vacío
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                return (false, null, "El título de la nota es requerido.");
+            }
+
+            // Actualizar los campos de la nota
+            note.Title = request.Title;
+            note.Content = request.Content;
+            note.CourseId = request.CourseId;
+            note.LastUpdated = DateTime.Now;
+
+            // Guardar los cambios en la base de datos
+            var updatedNote = await _notesRepository.UpdateNoteAsync(note);
+
+            if (updatedNote == null)
+            {
+                return (false, null, "Error al actualizar la nota en la base de datos.");
+            }
+
+            // Mapear a NoteResponse
+            var noteResponse = new NoteResponse
+            {
+                Id = updatedNote.Id,
+                Title = updatedNote.Title,
+                Content = updatedNote.Content,
+                CourseId = updatedNote.CourseId,
+                CourseName = updatedNote.Course?.Name ?? "General",
+                CreatedAt = updatedNote.CreatedAt,
+                UpdatedAt = updatedNote.LastUpdated
+            };
+
+            return (true, noteResponse, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error al actualizar la nota: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, List<CourseResponse>? Courses, string? ErrorMessage)> GetStudentCoursesAsync(int studentId)
+    {
+        try
+        {
+            // Validar que el estudiante existe
+            var student = await _notesRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                return (false, null, $"Estudiante con ID {studentId} no encontrado.");
+            }
+
+            // Obtener todos los cursos del plan de estudios del estudiante
+            var courses = await _notesRepository.GetStudentStudyPlanCoursesAsync(studentId);
+
+            // Mapear a CourseResponse
+            var courseResponses = courses.Select(c => new CourseResponse
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Name = c.Name,
+                Credits = c.Credits,
+                TheoryHours = c.TheoryHours,
+                PracticeHours = c.PracticeHours,
+                LabHours = c.LabHours
+            }).ToList();
+
+            return (true, courseResponses, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error al obtener los cursos: {ex.Message}");
         }
     }
 }

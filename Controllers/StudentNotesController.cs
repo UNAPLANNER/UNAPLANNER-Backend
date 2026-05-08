@@ -4,7 +4,7 @@ using UNAPLANNER_API.DTOs.Requests;
 
 namespace UNAPLANNER_API.Controllers;
 
-[Route("/api/student")]
+[Route("/api")]
 [ApiController]
 public class StudentNotesController : ControllerBase
 {
@@ -21,7 +21,7 @@ public class StudentNotesController : ControllerBase
     /// <param name="id">ID del estudiante</param>
     /// <param name="courseId">ID del curso (opcional) para filtrar por curso</param>
     /// <returns>Lista de notas del estudiante</returns>
-    [HttpGet("{id}/notes")]
+    [HttpGet("student/{id}/notes")]
     public async Task<IActionResult> GetStudentNotes(int id, [FromQuery] int? courseId = null)
     {
         try
@@ -47,7 +47,7 @@ public class StudentNotesController : ControllerBase
     /// <param name="id">ID del estudiante</param>
     /// <param name="request">Datos de la nota a crear</param>
     /// <returns>Nota creada</returns>
-    [HttpPost("{id}/notes")]
+    [HttpPost("student/{id}/notes")]
     public async Task<IActionResult> CreateStudentNote(int id, [FromBody] CreateNoteRequest request)
     {
         try
@@ -71,6 +71,64 @@ public class StudentNotesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { message = $"Error al crear la nota: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Actualiza una nota existente
+    /// </summary>
+    /// <param name="id">ID de la nota a actualizar</param>
+    /// <param name="request">Datos actualizados de la nota</param>
+    /// <returns>Nota actualizada</returns>
+    [HttpPut("notes/{id}")]
+    public async Task<IActionResult> UpdateNote(int id, [FromBody] UpdateNoteRequest request)
+    {
+        try
+        {
+            // Validar que el request no sea nulo
+            if (request == null)
+            {
+                return BadRequest(new { message = "El cuerpo de la solicitud no puede estar vacío." });
+            }
+
+            // Llamar al servicio para actualizar la nota
+            var result = await _notesService.UpdateNoteAsync(id, request);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { data = result.Note, message = "Nota actualizada exitosamente" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error al actualizar la nota: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene todos los cursos del plan de estudios de un estudiante
+    /// </summary>
+    /// <param name="id">ID del estudiante</param>
+    /// <returns>Lista de cursos disponibles para el estudiante</returns>
+    [HttpGet("student/{id}/courses")]
+    public async Task<IActionResult> GetStudentCourses(int id)
+    {
+        try
+        {
+            var result = await _notesService.GetStudentCoursesAsync(id);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { data = result.Courses, message = "Cursos obtenidos exitosamente" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error al obtener los cursos: {ex.Message}" });
         }
     }
 }
