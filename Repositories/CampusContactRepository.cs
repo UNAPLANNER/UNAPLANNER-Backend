@@ -34,4 +34,16 @@ public class CampusContactRepository : ICampusContactRepository
         return await _context.CampusContacts
             .FirstOrDefaultAsync(cc => cc.Id == id && cc.IsStatus);
     }
+
+    public async Task<CampusContact> CreateAsync(CampusContact campusContact)
+    {
+        _context.CampusContacts.Add(campusContact);
+        await _context.SaveChangesAsync();
+        return campusContact;
+    }
+
+    public async Task<bool> CampusExistsAsync(int campusId)
+    {
+        return await _context.Campuses.AnyAsync(c => c.Id == campusId && c.IsStatus);
+    }
 }
