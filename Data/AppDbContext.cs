@@ -42,6 +42,7 @@ public class AppDbContext : DbContext
 
     // Admin
     public DbSet<AdminLog> AdminLogs => Set<AdminLog>();
+    public DbSet<Admin> Admins => Set<Admin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -277,6 +278,20 @@ public class AppDbContext : DbContext
             .HasOne(al => al.User)
             .WithMany(u => u.AdminLogs)
             .HasForeignKey(al => al.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Admin → User
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.User)
+            .WithOne(u => u.Admin)
+            .HasForeignKey<Admin>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Admin → Campus
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.Campus)
+            .WithMany(c => c.Admins)
+            .HasForeignKey(a => a.CampusId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
