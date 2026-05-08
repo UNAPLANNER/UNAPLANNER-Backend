@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.Services;
+using UNAPLANNER_API.DTOs.Responses;
 
 namespace UNAPLANNER_API.Controllers;
 
@@ -17,15 +18,21 @@ public class CampusContactsController : ControllerBase
     /// <summary>
     /// Obtiene todos los contactos de campus disponibles
     /// </summary>
+    /// <param name="campusId">ID del campus para filtrar (opcional)</param>
     [HttpGet]
-    [ProducesResponseType(typeof(List<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CampusContactResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetAllContacts()
+    public async Task<IActionResult> GetAllContacts([FromQuery] int? campusId = null)
     {
         try
         {
-            var contacts = await _campusContactService.GetAllContactsAsync();
+            var contacts = await _campusContactService.GetAllContactsAsync(campusId);
             return Ok(contacts);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {

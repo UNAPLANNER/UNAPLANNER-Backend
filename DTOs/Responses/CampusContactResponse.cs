@@ -6,6 +6,8 @@ public class CampusContactResponse
 
     public int CampusId { get; set; }
 
+    public string CampusName { get; set; } = string.Empty;
+
     public string DepartamentName { get; set; } = string.Empty;
 
     public string? Phone { get; set; }
