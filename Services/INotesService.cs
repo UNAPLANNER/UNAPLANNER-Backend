@@ -1,8 +1,10 @@
 using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.DTOs.Requests;
 
 namespace UNAPLANNER_API.Services;
 
 public interface INotesService
 {
     Task<(bool Success, List<NoteResponse>? Notes, string? ErrorMessage)> GetStudentNotesAsync(int studentId, int? courseId = null);
+    Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> CreateNoteAsync(int studentId, CreateNoteRequest request);
 }

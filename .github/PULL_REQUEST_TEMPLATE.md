@@ -1,23 +1,24 @@
-# 📥 Pull Request Template
+# Pull Request Template
 
-## 📌 Descripción
-*Ej: Implementación de login con JWT + pantalla en Compose.*
-
-## ✅ Cambios principales
-- **[Backend .NET]:** Controladores, servicios, validación de credenciales y generación de JWT.
-- **[Frontend Android]:** Retrofit, sesión segura, pantalla en Compose y navegación.
-- **[Limpieza]:** `.gitignore` actualizado.
+## Description
 
 
-## 🧪 Pruebas
-- [ ] Backend funcionando (Postman/Swagger).
-- [ ] Flujo completo desde Android.
-- [ ] Manejo de errores (credenciales inválidas, red, etc.).
+## Main changes
+### **[Backend .NET]:** 
+-
+### **[Android Frontend]:** 
+-
+## Testing
+- [ ] Backend working (Postman/Swagger).
+- [ ] Complete flow from Android.
+- [ ] Error handling (invalid credentials, network, etc.).
 
-## 📱 Endpoints
-| Método | Endpoint | Uso |
-|--------|----------|-----|
-| POST | `/api/auth/login` | Autenticar usuario |
+## Endpoints
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/auth/login` | Authenticate user |
 
-## 📝 Notas (opcional)
-*Algo importante que el revisor deba saber.*
+## Screenshots / Evidence
+*Drag and drop or paste images here.*
+
+## Notes (optional)
