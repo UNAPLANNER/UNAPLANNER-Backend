@@ -1,4 +1,5 @@
 using UNAPLANNER_API.DTOs.Requests;
+using System.Linq;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Models.Entities;
 
@@ -12,6 +13,7 @@ public class CampusContactMapper
         {
             Id = campusContact.Id,
             CampusId = campusContact.CampusId,
+            CampusName = campusContact.Campus?.Name ?? "N/A",
             DepartamentName = campusContact.DepartamentName,
             Phone = campusContact.Phone,
             Email = campusContact.Email,

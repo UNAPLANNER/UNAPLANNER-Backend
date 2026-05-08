@@ -14,9 +14,19 @@ public class CampusContactService : ICampusContactService
         _campusContactRepository = campusContactRepository;
     }
 
-    public async Task<List<CampusContactResponse>> GetAllContactsAsync()
+    public async Task<List<CampusContactResponse>> GetAllContactsAsync(int? campusId = null)
     {
-        var contacts = await _campusContactRepository.GetAllAsync();
+        List<Models.Entities.CampusContact> contacts;
+
+        if (campusId.HasValue && campusId > 0)
+        {
+            contacts = await _campusContactRepository.GetByCampusIdAsync(campusId.Value);
+        }
+        else
+        {
+            contacts = await _campusContactRepository.GetAllAsync();
+        }
+
         return CampusContactMapper.ToCampusContactResponseList(contacts);
     }
 
