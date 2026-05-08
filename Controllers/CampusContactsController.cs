@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
@@ -15,7 +17,7 @@ public class CampusContactsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene todos los contactos de campus disponibles
+    /// Gets all available campus contacts
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<object>), StatusCodes.Status200OK)]
@@ -34,7 +36,7 @@ public class CampusContactsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene los contactos de un campus específico
+    /// Gets the contacts of a specific campus
     /// </summary>
     [HttpGet("campus/{campusId}")]
     [ProducesResponseType(typeof(List<object>), StatusCodes.Status200OK)]
@@ -60,7 +62,7 @@ public class CampusContactsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene un contacto específico por su ID
+    /// Gets a specific contact by its ID
     /// </summary>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
@@ -71,7 +73,7 @@ public class CampusContactsController : ControllerBase
         try
         {
             var contact = await _campusContactService.GetContactByIdAsync(id);
-            
+
             if (contact == null)
             {
                 return NotFound(new { message = $"Contacto con ID {id} no encontrado" });
@@ -82,6 +84,37 @@ public class CampusContactsController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error al obtener el contacto", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Create a new campus contact. Only accessible to Admin..
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateContact([FromBody] CreateCampusContactRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var contact = await _campusContactService.CreateContactAsync(request);
+            return CreatedAtAction(nameof(GetContactById), new { id = contact.Id }, contact);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(request.CampusId), ex.Message);
+            return ValidationProblem(ModelState);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error al crear el contacto", error = ex.Message });
         }
     }
 }
