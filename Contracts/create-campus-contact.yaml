@@ -1,0 +1,232 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API - Crear Contacto de Campus
+  version: 1.0.0
+  description: |
+    Especificación del endpoint para crear un nuevo contacto de campus.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /api/campus-contacts:
+    post:
+      tags:
+        - Campus Contacts
+      summary: Crear un nuevo contacto de campus
+      description: |
+        Crea un nuevo contacto de campus con la información del departamento.
+        Solo accesible para usuarios con rol **Admin**.
+
+        **Validaciones:**
+        - `departamentName`: obligatorio, máximo 100 caracteres
+        - `phone`: obligatorio, solo números, guiones, espacios y extensión opcional (ej: `2766-6001 ext 123`)
+        - `campusId`: obligatorio, debe existir en la tabla Campus
+        - `email`: opcional, debe tener formato de correo válido si se proporciona
+        - `description`: opcional, máximo 500 caracteres
+      operationId: createCampusContact
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampusContactRequest'
+            examples:
+              completo:
+                summary: Contacto con todos los campos
+                value:
+                  departamentName: "Registro Académico"
+                  phone: "2766-6001"
+                  campusId: 1
+                  email: "registro@una.ac.cr"
+                  description: "Departamento encargado de trámites académicos y matrícula"
+              minimo:
+                summary: Contacto con campos mínimos requeridos
+                value:
+                  departamentName: "Biblioteca"
+                  phone: "2766-6002"
+                  campusId: 1
+              con_extension:
+                summary: Teléfono con extensión
+                value:
+                  departamentName: "Decanatura"
+                  phone: "2766-6000 ext 101"
+                  campusId: 1
+      responses:
+        "201":
+          description: Contacto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusContactResponse'
+              example:
+                id: 5
+                campusId: 1
+                departamentName: "Registro Académico"
+                phone: "2766-6001"
+                email: "registro@una.ac.cr"
+                description: "Departamento encargado de trámites académicos y matrícula"
+                isStatus: true
+                createdDate: "2026-05-07T10:30:00"
+        "400":
+          description: Datos inválidos en la solicitud (errores de validación por campo)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblemDetails'
+              examples:
+                campos_requeridos:
+                  summary: Campos requeridos faltantes
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      DepartamentName:
+                        - "El nombre del departamento es obligatorio"
+                      Phone:
+                        - "El teléfono es obligatorio"
+                      CampusId:
+                        - "El campus es obligatorio"
+                campus_no_existe:
+                  summary: Campus no encontrado
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      CampusId:
+                        - "El campus con ID 99 no existe."
+                email_invalido:
+                  summary: Formato de email inválido
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      Email:
+                        - "Formato de correo electrónico inválido"
+                telefono_invalido:
+                  summary: Formato de teléfono inválido
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      Phone:
+                        - "Formato de teléfono inválido. Solo se permiten números, guiones, espacios y extensión opcional (ej: 2766-6001 ext 123)"
+        "401":
+          description: Token de autenticación no proporcionado o inválido
+        "403":
+          description: El usuario autenticado no tiene rol Admin
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al crear el contacto"
+                  error:
+                    type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido desde POST /api/auth/login
+
+  schemas:
+    CreateCampusContactRequest:
+      type: object
+      required:
+        - departamentName
+        - phone
+        - campusId
+      properties:
+        departamentName:
+          type: string
+          maxLength: 100
+          description: Nombre del departamento (requerido)
+          example: "Registro Académico"
+        phone:
+          type: string
+          description: |
+            Teléfono del departamento (requerido).
+            Solo números, guiones, espacios y extensión opcional.
+            Patrón: `^[\d\s\-\(\)\.]{7,25}(\s?[eE]xt\.?\s*\d{1,6})?$`
+          example: "2766-6001"
+        campusId:
+          type: integer
+          description: ID del campus (requerido, debe existir en la base de datos)
+          example: 1
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email del departamento (opcional, debe tener formato válido)
+          example: "registro@una.ac.cr"
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Descripción adicional del contacto (opcional)
+          example: "Departamento encargado de trámites académicos y matrícula"
+
+    CampusContactResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del contacto generado por la base de datos
+          example: 5
+        campusId:
+          type: integer
+          description: ID del campus al que pertenece
+          example: 1
+        departamentName:
+          type: string
+          description: Nombre del departamento
+          example: "Registro Académico"
+        phone:
+          type: string
+          nullable: true
+          description: Teléfono del departamento
+          example: "2766-6001"
+        email:
+          type: string
+          nullable: true
+          description: Email del departamento
+          example: "registro@una.ac.cr"
+        description:
+          type: string
+          nullable: true
+          description: Descripción adicional
+          example: "Departamento encargado de trámites académicos y matrícula"
+        isStatus:
+          type: boolean
+          description: Estado activo del contacto (siempre true al crear)
+          example: true
+        createdDate:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2026-05-07T10:30:00"
+
+    ValidationProblemDetails:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "One or more validation errors occurred."
+        status:
+          type: integer
+          example: 400
+        errors:
+          type: object
+          description: Diccionario de errores por campo
+          additionalProperties:
+            type: array
+            items:
+              type: string
