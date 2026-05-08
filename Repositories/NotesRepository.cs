@@ -81,6 +81,26 @@ public class NotesRepository : INotesRepository
         }
     }
 
+    public async Task<bool> DeleteNoteAsync(int noteId)
+    {
+        try
+        {
+            var note = await _context.Notes.FindAsync(noteId);
+            if (note == null)
+            {
+                return false;
+            }
+
+            _context.Notes.Remove(note);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public async Task<List<Course>> GetStudentStudyPlanCoursesAsync(int studentId)
     {
         var student = await _context.Students

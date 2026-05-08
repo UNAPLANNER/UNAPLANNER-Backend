@@ -188,5 +188,38 @@ public class NotesService : INotesService
             return (false, null, $"Error al obtener los cursos: {ex.Message}");
         }
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteNoteAsync(int noteId, int userId)
+    {
+        try
+        {
+            // Validar que la nota existe
+            var note = await _notesRepository.GetNoteByIdAsync(noteId);
+            if (note == null)
+            {
+                return (false, $"Nota con ID {noteId} no encontrada.");
+            }
+
+            // Validar propiedad de la nota (seguridad)
+            if (note.UserId != userId)
+            {
+                return (false, "No tienes permisos para eliminar esta nota.");
+            }
+
+            // Eliminar la nota
+            var deleted = await _notesRepository.DeleteNoteAsync(noteId);
+
+            if (!deleted)
+            {
+                return (false, "Error al eliminar la nota de la base de datos.");
+            }
+
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error al eliminar la nota: {ex.Message}");
+        }
+    }
 }
 

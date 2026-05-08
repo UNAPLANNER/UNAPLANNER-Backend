@@ -131,4 +131,46 @@ public class StudentNotesController : ControllerBase
             return BadRequest(new { message = $"Error al obtener los cursos: {ex.Message}" });
         }
     }
+
+    /// <summary>
+    /// Elimina una nota existente
+    /// </summary>
+    /// <param name="id">ID de la nota a eliminar</param>
+    /// <param name="userId">ID del usuario propietario de la nota (para validación de propiedad)</param>
+    /// <returns>204 No Content si se elimina exitosamente</returns>
+    [HttpDelete("notes/{id}")]
+    public async Task<IActionResult> DeleteNote(int id, [FromQuery] int userId)
+    {
+        try
+        {
+            // Validar que el userId está presente
+            if (userId <= 0)
+            {
+                return BadRequest(new { message = "El ID del usuario es requerido." });
+            }
+
+            // Llamar al servicio para eliminar la nota
+            var result = await _notesService.DeleteNoteAsync(id, userId);
+
+            if (!result.Success)
+            {
+                // Si es "No encontrada" retornar 404, si es "Sin permisos" retornar 403
+                if (!string.IsNullOrEmpty(result.ErrorMessage) && result.ErrorMessage.Contains("no encontrada"))
+                {
+                    return NotFound(new { message = result.ErrorMessage });
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage) && result.ErrorMessage.Contains("No tienes permisos"))
+                {
+                    return Forbid();
+                }
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error al eliminar la nota: {ex.Message}" });
+        }
+    }
 }
