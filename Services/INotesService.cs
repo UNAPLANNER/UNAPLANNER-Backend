@@ -7,4 +7,6 @@ public interface INotesService
 {
     Task<(bool Success, List<NoteResponse>? Notes, string? ErrorMessage)> GetStudentNotesAsync(int studentId, int? courseId = null);
     Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> CreateNoteAsync(int studentId, CreateNoteRequest request);
+    Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, UpdateNoteRequest request);
+    Task<(bool Success, List<CourseResponse>? Courses, string? ErrorMessage)> GetStudentCoursesAsync(int studentId);
 }
