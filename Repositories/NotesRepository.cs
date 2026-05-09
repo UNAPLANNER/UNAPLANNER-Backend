@@ -19,15 +19,17 @@ public class NotesRepository : INotesRepository
             .FirstOrDefaultAsync(s => s.StudentId == studentId);
     }
 
-    public async Task<Student?> GetStudentByUserIdAsync(int userId)
+    public async Task<Note?> GetNoteByIdAsync(int noteId)
     {
-        return await _context.Students
-            .FirstOrDefaultAsync(s => s.UserId == userId);
+        return await _context.Notes
+            .Include(n => n.Course)
+            .FirstOrDefaultAsync(n => n.Id == noteId);
     }
 
     public async Task<List<Note>> GetNotesByUserIdAsync(int userId, int? courseId = null)
     {
         var query = _context.Notes
+            .Include(n => n.Course)
             .OrderByDescending(n => n.CreatedAt)
             .Where(n => n.UserId == userId);
 
@@ -39,32 +41,86 @@ public class NotesRepository : INotesRepository
         return await query.ToListAsync();
     }
 
-    public async Task<Note?> GetNoteByIdAsync(int noteId)
+    public async Task<Note?> CreateNoteAsync(Note note)
     {
-        return await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+        try
+        {
+            _context.Notes.Add(note);
+            await _context.SaveChangesAsync();
+            
+            // Recargar la nota con el Course relacionado
+            var createdNote = await _context.Notes
+                .Include(n => n.Course)
+                .FirstOrDefaultAsync(n => n.Id == note.Id);
+            
+            return createdNote;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
-    public async Task<Note> AddNoteAsync(Note note)
+    public async Task<Note?> UpdateNoteAsync(Note note)
     {
-        _context.Notes.Add(note);
-        await _context.SaveChangesAsync();
-        return note;
+        try
+        {
+            _context.Notes.Update(note);
+            await _context.SaveChangesAsync();
+            
+            // Recargar la nota con el Course relacionado
+            var updatedNote = await _context.Notes
+                .Include(n => n.Course)
+                .FirstOrDefaultAsync(n => n.Id == note.Id);
+            
+            return updatedNote;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
-    public Task UpdateNoteAsync(Note note)
+    public async Task<bool> DeleteNoteAsync(int noteId)
     {
-        _context.Notes.Update(note);
-        return Task.CompletedTask;
+        try
+        {
+            var note = await _context.Notes.FindAsync(noteId);
+            if (note == null)
+            {
+                return false;
+            }
+
+            _context.Notes.Remove(note);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
-    public Task DeleteNoteAsync(Note note)
+    public async Task<List<Course>> GetStudentStudyPlanCoursesAsync(int studentId)
     {
-        _context.Notes.Remove(note);
-        return Task.CompletedTask;
-    }
+        var student = await _context.Students
+            .FirstOrDefaultAsync(s => s.StudentId == studentId);
 
-    public async Task<bool> SaveChangesAsync()
-    {
-        return await _context.SaveChangesAsync() > 0;
+        if (student == null)
+        {
+            return new List<Course>();
+        }
+
+        var courses = await _context.StudyPlanCourses
+            .Where(spc => spc.StudyPlanId == student.StudyPlanId)
+            .Include(spc => spc.Course)
+            .Select(spc => spc.Course)
+            .Where(c => c.IsStatus)
+            .Distinct()
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        return courses;
     }
 }
+

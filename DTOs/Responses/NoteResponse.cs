@@ -10,6 +10,8 @@ public class NoteResponse
 
     public int? CourseId { get; set; }
 
+    public string CourseName { get; set; } = "General";
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

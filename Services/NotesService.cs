@@ -1,7 +1,7 @@
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.DTOs.Requests;
-using UNAPLANNER_API.Models.Entities;
 using UNAPLANNER_API.Repositories;
+using UNAPLANNER_API.Models.Entities;
 
 namespace UNAPLANNER_API.Services;
 
@@ -35,6 +35,7 @@ public class NotesService : INotesService
                 Title = n.Title,
                 Content = n.Content,
                 CourseId = n.CourseId,
+                CourseName = n.Course?.Name ?? "General",
                 CreatedAt = n.CreatedAt,
                 UpdatedAt = n.LastUpdated
             }).ToList();
@@ -47,57 +48,55 @@ public class NotesService : INotesService
         }
     }
 
-    public async Task<(bool Success, List<NoteResponse>? Notes, string? ErrorMessage)> GetStudentNotesByUserIdAsync(int userId, int? courseId = null)
+    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> CreateNoteAsync(int studentId, CreateNoteRequest request)
     {
         try
         {
-            var student = await _notesRepository.GetStudentByUserIdAsync(userId);
+            // Validar que el estudiante existe
+            var student = await _notesRepository.GetStudentByIdAsync(studentId);
             if (student == null)
             {
-                return (false, null, $"Estudiante asociado al usuario {userId} no encontrado.");
+                return (false, null, $"Estudiante con ID {studentId} no encontrado.");
             }
 
-            var notes = await _notesRepository.GetNotesByUserIdAsync(userId, courseId);
-            var noteResponses = notes.Select(n => new NoteResponse
+            // Validar que el título no esté vacío
+            if (string.IsNullOrWhiteSpace(request.Title))
             {
-                Id = n.Id,
-                Title = n.Title,
-                Content = n.Content,
-                CourseId = n.CourseId,
-                CreatedAt = n.CreatedAt,
-                UpdatedAt = n.LastUpdated
-            }).ToList();
-
-            return (true, noteResponses, null);
-        }
-        catch (Exception ex)
-        {
-            return (false, null, $"Error al obtener las notas: {ex.Message}");
-        }
-    }
-
-    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> CreateNoteByUserIdAsync(int userId, CreateNoteRequest request)
-    {
-        try
-        {
-            var student = await _notesRepository.GetStudentByUserIdAsync(userId);
-            if (student == null)
-            {
-                return (false, null, $"Estudiante asociado al usuario {userId} no encontrado.");
+                return (false, null, "El título de la nota es requerido.");
             }
 
+            // Crear la nota asociada al usuario del estudiante
             var note = new Note
             {
-                UserId = userId,
-                CourseId = request.CourseId,
-                Title = request.Title.Trim(),
+                UserId = student.UserId,
+                Title = request.Title,
                 Content = request.Content,
+                CourseId = request.CourseId,
                 CreatedAt = DateTime.Now,
                 LastUpdated = DateTime.Now
             };
 
-            var created = await _notesRepository.AddNoteAsync(note);
-            return (true, MapNote(created), null);
+            // Guardar la nota en la base de datos
+            var createdNote = await _notesRepository.CreateNoteAsync(note);
+
+            if (createdNote == null)
+            {
+                return (false, null, "Error al crear la nota en la base de datos.");
+            }
+
+            // Mapear a NoteResponse
+            var noteResponse = new NoteResponse
+            {
+                Id = createdNote.Id,
+                Title = createdNote.Title,
+                Content = createdNote.Content,
+                CourseId = createdNote.CourseId,
+                CourseName = createdNote.Course?.Name ?? "General",
+                CreatedAt = createdNote.CreatedAt,
+                UpdatedAt = createdNote.LastUpdated
+            };
+
+            return (true, noteResponse, null);
         }
         catch (Exception ex)
         {
@@ -109,21 +108,46 @@ public class NotesService : INotesService
     {
         try
         {
+            // Validar que la nota existe
             var note = await _notesRepository.GetNoteByIdAsync(noteId);
             if (note == null)
             {
                 return (false, null, $"Nota con ID {noteId} no encontrada.");
             }
 
-            note.Title = request.Title.Trim();
+            // Validar que el título no esté vacío
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                return (false, null, "El título de la nota es requerido.");
+            }
+
+            // Actualizar los campos de la nota
+            note.Title = request.Title;
             note.Content = request.Content;
             note.CourseId = request.CourseId;
             note.LastUpdated = DateTime.Now;
 
-            await _notesRepository.UpdateNoteAsync(note);
-            await _notesRepository.SaveChangesAsync();
+            // Guardar los cambios en la base de datos
+            var updatedNote = await _notesRepository.UpdateNoteAsync(note);
 
-            return (true, MapNote(note), null);
+            if (updatedNote == null)
+            {
+                return (false, null, "Error al actualizar la nota en la base de datos.");
+            }
+
+            // Mapear a NoteResponse
+            var noteResponse = new NoteResponse
+            {
+                Id = updatedNote.Id,
+                Title = updatedNote.Title,
+                Content = updatedNote.Content,
+                CourseId = updatedNote.CourseId,
+                CourseName = updatedNote.Course?.Name ?? "General",
+                CreatedAt = updatedNote.CreatedAt,
+                UpdatedAt = updatedNote.LastUpdated
+            };
+
+            return (true, noteResponse, null);
         }
         catch (Exception ex)
         {
@@ -131,23 +155,64 @@ public class NotesService : INotesService
         }
     }
 
+    public async Task<(bool Success, List<CourseResponse>? Courses, string? ErrorMessage)> GetStudentCoursesAsync(int studentId)
+    {
+        try
+        {
+            // Validar que el estudiante existe
+            var student = await _notesRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                return (false, null, $"Estudiante con ID {studentId} no encontrado.");
+            }
+
+            // Obtener todos los cursos del plan de estudios del estudiante
+            var courses = await _notesRepository.GetStudentStudyPlanCoursesAsync(studentId);
+
+            // Mapear a CourseResponse
+            var courseResponses = courses.Select(c => new CourseResponse
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Name = c.Name,
+                Credits = c.Credits,
+                TheoryHours = c.TheoryHours,
+                PracticeHours = c.PracticeHours,
+                LabHours = c.LabHours
+            }).ToList();
+
+            return (true, courseResponses, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error al obtener los cursos: {ex.Message}");
+        }
+    }
+
     public async Task<(bool Success, string? ErrorMessage)> DeleteNoteAsync(int noteId, int userId)
     {
         try
         {
+            // Validar que la nota existe
             var note = await _notesRepository.GetNoteByIdAsync(noteId);
             if (note == null)
             {
                 return (false, $"Nota con ID {noteId} no encontrada.");
             }
 
+            // Validar propiedad de la nota (seguridad)
             if (note.UserId != userId)
             {
                 return (false, "No tienes permisos para eliminar esta nota.");
             }
 
-            await _notesRepository.DeleteNoteAsync(note);
-            await _notesRepository.SaveChangesAsync();
+            // Eliminar la nota
+            var deleted = await _notesRepository.DeleteNoteAsync(noteId);
+
+            if (!deleted)
+            {
+                return (false, "Error al eliminar la nota de la base de datos.");
+            }
 
             return (true, null);
         }
@@ -156,17 +221,5 @@ public class NotesService : INotesService
             return (false, $"Error al eliminar la nota: {ex.Message}");
         }
     }
-
-    private static NoteResponse MapNote(Note note)
-    {
-        return new NoteResponse
-        {
-            Id = note.Id,
-            Title = note.Title,
-            Content = note.Content,
-            CourseId = note.CourseId,
-            CreatedAt = note.CreatedAt,
-            UpdatedAt = note.LastUpdated
-        };
-    }
 }
+

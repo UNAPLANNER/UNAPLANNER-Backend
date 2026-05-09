@@ -2,6 +2,7 @@ openapi: 3.0.3
 
 info:
   title: UNAPLANNER API
+  version: 1.0.0
   description: |
     API RESTful para la plataforma UNAPLANNER de control académico.
     Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
