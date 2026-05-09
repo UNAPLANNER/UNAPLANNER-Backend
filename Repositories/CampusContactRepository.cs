@@ -16,6 +16,7 @@ public class CampusContactRepository : ICampusContactRepository
     public async Task<List<CampusContact>> GetAllAsync()
     {
         return await _context.CampusContacts
+            .Include(cc => cc.Campus)
             .Where(cc => cc.IsStatus)
             .OrderBy(cc => cc.DepartamentName)
             .ToListAsync();
@@ -24,6 +25,7 @@ public class CampusContactRepository : ICampusContactRepository
     public async Task<List<CampusContact>> GetByCampusIdAsync(int campusId)
     {
         return await _context.CampusContacts
+            .Include(cc => cc.Campus)
             .Where(cc => cc.CampusId == campusId && cc.IsStatus)
             .OrderBy(cc => cc.DepartamentName)
             .ToListAsync();
@@ -32,6 +34,29 @@ public class CampusContactRepository : ICampusContactRepository
     public async Task<CampusContact?> GetByIdAsync(int id)
     {
         return await _context.CampusContacts
+            .Include(cc => cc.Campus)
             .FirstOrDefaultAsync(cc => cc.Id == id && cc.IsStatus);
+    }
+
+    public async Task<CampusContact> CreateAsync(CampusContact campusContact)
+    {
+        _context.CampusContacts.Add(campusContact);
+        await _context.SaveChangesAsync();
+        return campusContact;
+    }
+
+    public async Task<bool> CampusExistsAsync(int campusId)
+    {
+        return await _context.Campuses.AnyAsync(c => c.Id == campusId && c.IsStatus);
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var contact = await _context.CampusContacts.FirstOrDefaultAsync(cc => cc.Id == id);
+        if (contact == null) return false;
+
+        _context.CampusContacts.Remove(contact);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

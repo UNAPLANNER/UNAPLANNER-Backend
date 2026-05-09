@@ -1,0 +1,85 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API - Eliminar Contacto de Campus
+  version: 1.0.0
+  description: |
+    Especificación del endpoint para eliminar permanentemente un contacto de campus.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /api/campus-contacts/{id}:
+    delete:
+      tags:
+        - Campus Contacts
+      summary: Eliminar un contacto de campus
+      description: |
+        Elimina permanentemente un contacto de campus de la base de datos.
+        Solo accesible para usuarios con rol **Admin**.
+
+        **Comportamiento:**
+        - Si el contacto existe: se elimina y retorna `204 No Content`
+        - Si el contacto no existe: retorna `404 Not Found`
+        - Si no hay token o el token es inválido: retorna `401 Unauthorized`
+        - Si el usuario autenticado no tiene rol Admin: retorna `403 Forbidden`
+      operationId: deleteCampusContact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único del contacto a eliminar
+          schema:
+            type: integer
+            example: 5
+      responses:
+        "204":
+          description: Contacto eliminado exitosamente. Sin cuerpo de respuesta.
+        "401":
+          description: Token de autenticación no proporcionado o inválido.
+        "403":
+          description: El usuario autenticado no tiene rol Admin.
+        "404":
+          description: Contacto no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                message: "Contacto con ID 5 no encontrado"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                message: "Error al eliminar el contacto"
+                error: "Detalle del error interno"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido desde POST /api/auth/login con rol Admin
+
+  schemas:
+    NotFoundError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Contacto con ID 5 no encontrado"
+
+    ServerError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error al eliminar el contacto"
+        error:
+          type: string
+          example: "Detalle del error interno"
