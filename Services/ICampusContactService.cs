@@ -9,4 +9,5 @@ public interface ICampusContactService
     Task<List<CampusContactResponse>> GetContactsByCampusAsync(int campusId);
     Task<CampusContactResponse?> GetContactByIdAsync(int id);
     Task<CampusContactResponse> CreateContactAsync(CreateCampusContactRequest request);
+    Task<bool> DeleteContactAsync(int id);
 }

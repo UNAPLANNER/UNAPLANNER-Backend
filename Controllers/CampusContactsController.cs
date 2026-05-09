@@ -95,6 +95,33 @@ public class CampusContactsController : ControllerBase
     }
 
     /// <summary>
+    /// Permanently deletes a campus contact. Only accessible to Admin.
+    /// </summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteContact(int id)
+    {
+        try
+        {
+            var deleted = await _campusContactService.DeleteContactAsync(id);
+
+            if (!deleted)
+                return NotFound(new { message = $"Contacto con ID {id} no encontrado" });
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error al eliminar el contacto", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Create a new campus contact. Only accessible to Admin..
     /// </summary>
     [HttpPost]

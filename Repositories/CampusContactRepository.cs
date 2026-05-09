@@ -49,4 +49,14 @@ public class CampusContactRepository : ICampusContactRepository
     {
         return await _context.Campuses.AnyAsync(c => c.Id == campusId && c.IsStatus);
     }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var contact = await _context.CampusContacts.FirstOrDefaultAsync(cc => cc.Id == id);
+        if (contact == null) return false;
+
+        _context.CampusContacts.Remove(contact);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }
