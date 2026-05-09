@@ -22,40 +22,6 @@ namespace UNAPLANNER_API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("UNAPLANNER_API.Models.Entities.Admin", b =>
-                {
-                    b.Property<int>("AdminId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdminId"));
-
-                    b.Property<string>("Department")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("CampusId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("AdminId");
-
-                    b.HasIndex("CampusId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Admins");
-                });
-
             modelBuilder.Entity("UNAPLANNER_API.Models.Entities.AdminLog", b =>
                 {
                     b.Property<int>("Id")
@@ -799,24 +765,6 @@ namespace UNAPLANNER_API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("UNAPLANNER_API.Models.Entities.Admin", b =>
-                {
-                    b.HasOne("UNAPLANNER_API.Models.Entities.Campus", "Campus")
-                        .WithMany("Admins")
-                        .HasForeignKey("CampusId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("UNAPLANNER_API.Models.Entities.User", "User")
-                        .WithOne("Admin")
-                        .HasForeignKey("UNAPLANNER_API.Models.Entities.Admin", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Campus");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("UNAPLANNER_API.Models.Entities.AdminLog", b =>
                 {
                     b.HasOne("UNAPLANNER_API.Models.Entities.User", "User")
@@ -1056,8 +1004,6 @@ namespace UNAPLANNER_API.Migrations
 
             modelBuilder.Entity("UNAPLANNER_API.Models.Entities.Campus", b =>
                 {
-                    b.Navigation("Admins");
-
                     b.Navigation("CampusContacts");
 
                     b.Navigation("Careers");
@@ -1113,9 +1059,6 @@ namespace UNAPLANNER_API.Migrations
 
             modelBuilder.Entity("UNAPLANNER_API.Models.Entities.User", b =>
                 {
-                    b.Navigation("Admin")
-                        .IsRequired();
-
                     b.Navigation("AdminLogs");
 
                     b.Navigation("Calendars");

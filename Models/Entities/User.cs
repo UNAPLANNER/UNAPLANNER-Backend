@@ -15,8 +15,7 @@ public class User
 
     // Relación (muchos a 1)
     public Role Role { get; set; } = null!;
-    public Student? Student { get; set; }
-    public Admin? Admin { get; set; }
+    public Student Student { get; set; } = null!;
 
     
     public ICollection<AdminLog> AdminLogs { get; set; } = new List<AdminLog>();
