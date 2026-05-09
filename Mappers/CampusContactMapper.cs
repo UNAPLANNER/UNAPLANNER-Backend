@@ -1,3 +1,4 @@
+using UNAPLANNER_API.DTOs.Requests;
 using System.Linq;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Models.Entities;
@@ -25,5 +26,19 @@ public class CampusContactMapper
     public static List<CampusContactResponse> ToCampusContactResponseList(List<CampusContact> campusContacts)
     {
         return campusContacts.Select(ToCampusContactResponse).ToList();
+    }
+
+    public static CampusContact ToEntity(CreateCampusContactRequest request)
+    {
+        return new CampusContact
+        {
+            CampusId = request.CampusId,
+            DepartamentName = request.DepartamentName,
+            Phone = request.Phone,
+            Email = request.Email,
+            Description = request.Description,
+            IsStatus = true,
+            CreatedDate = DateTime.Now
+        };
     }
 }
