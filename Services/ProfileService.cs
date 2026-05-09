@@ -1,7 +1,7 @@
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.Models.Entities;
 using UNAPLANNER_API.Repositories;
-using BCrypt.Net;
 
 namespace UNAPLANNER_API.Services;
 
@@ -19,15 +19,9 @@ public class ProfileService : IProfileService
         var user = await _repository.GetByIdAsync(userId);
         if (user == null) return null;
 
-        return new ProfileResponse
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-            FullName = user.Admin?.FullName ?? user.Student?.FullName,
-            Phone = user.Admin?.Phone,
-            Department = user.Admin?.Department,
-            Role = user.Role.TypeRole
-        };
+        var admin = user.Admin ?? await _repository.GetAdminByUserIdAsync(userId);
+
+        return MapProfile(user, admin);
     }
 
     public async Task<ProfileResponse?> UpdateProfileAsync(int userId, UpdateProfileRequest request)
@@ -35,29 +29,21 @@ public class ProfileService : IProfileService
         var user = await _repository.GetByIdAsync(userId);
         if (user == null) return null;
 
-        if (user.Admin == null)
+        var admin = user.Admin ?? await _repository.GetAdminByUserIdAsync(userId);
+
+        if (admin == null)
         {
-            user.Admin = new Models.Entities.Admin { UserId = userId };
+            admin = new Admin { UserId = userId };
+            await _repository.AddAdminAsync(admin);
         }
 
-        user.Admin.FullName = request.FullName ?? "";
-        user.Admin.Phone = request.Phone;
-        user.Admin.Department = request.Department;
+        admin.FullName = request.FullName ?? admin.FullName;
+        admin.Phone = request.Phone ?? admin.Phone;
+        admin.Department = request.Department ?? admin.Department;
 
-        await _repository.UpdateAsync(user);
-        var success = await _repository.SaveChangesAsync();
+        await _repository.SaveChangesAsync();
 
-        if (!success) return null;
-
-        return new ProfileResponse
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-            FullName = user.Admin?.FullName ?? user.Student?.FullName,
-            Phone = user.Admin?.Phone,
-            Department = user.Admin?.Department,
-            Role = user.Role.TypeRole
-        };
+        return MapProfile(user, admin);
     }
 
     public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request)
@@ -65,16 +51,33 @@ public class ProfileService : IProfileService
         var user = await _repository.GetByIdAsync(userId);
         if (user == null) return false;
 
-        // Validar contraseña actual
-        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.Password))
+        var currentPassword = request.CurrentPassword ?? request.OldPassword;
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
         {
             return false;
         }
 
-        // Hash de la nueva contraseña
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.Password))
+        {
+            return false;
+        }
+
         user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
         await _repository.UpdateAsync(user);
         return await _repository.SaveChangesAsync();
+    }
+
+    private static ProfileResponse MapProfile(User user, Admin? admin)
+    {
+        return new ProfileResponse
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            FullName = admin?.FullName ?? user.Student?.FullName,
+            Phone = admin?.Phone,
+            Department = admin?.Department,
+            Role = user.Role.TypeRole
+        };
     }
 }

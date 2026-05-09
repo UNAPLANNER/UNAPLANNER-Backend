@@ -19,6 +19,12 @@ public class NotesRepository : INotesRepository
             .FirstOrDefaultAsync(s => s.StudentId == studentId);
     }
 
+    public async Task<Student?> GetStudentByUserIdAsync(int userId)
+    {
+        return await _context.Students
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+    }
+
     public async Task<List<Note>> GetNotesByUserIdAsync(int userId, int? courseId = null)
     {
         var query = _context.Notes

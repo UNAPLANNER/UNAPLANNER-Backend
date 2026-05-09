@@ -39,4 +39,30 @@ public class StudentNotesController : ControllerBase
             return BadRequest(new { message = $"Error al obtener las notas: {ex.Message}" });
         }
     }
+
+    /// <summary>
+    /// Obtiene las notas de un estudiante usando el ID de usuario devuelto por login.
+    /// </summary>
+    /// <param name="userId">ID del usuario</param>
+    /// <param name="courseId">ID del curso (opcional) para filtrar por curso</param>
+    /// <returns>Lista de notas del estudiante</returns>
+    [HttpGet("user/{userId}/notes")]
+    public async Task<IActionResult> GetStudentNotesByUserId(int userId, [FromQuery] int? courseId = null)
+    {
+        try
+        {
+            var result = await _notesService.GetStudentNotesByUserIdAsync(userId, courseId);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { data = result.Notes, message = "Notas obtenidas exitosamente" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error al obtener las notas: {ex.Message}" });
+        }
+    }
 }

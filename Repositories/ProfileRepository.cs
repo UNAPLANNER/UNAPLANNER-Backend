@@ -22,6 +22,17 @@ public class ProfileRepository : IProfileRepository
             .FirstOrDefaultAsync(u => u.UserId == userId);
     }
 
+    public async Task<Admin?> GetAdminByUserIdAsync(int userId)
+    {
+        return await _context.Admins
+            .FirstOrDefaultAsync(a => a.UserId == userId);
+    }
+
+    public async Task AddAdminAsync(Admin admin)
+    {
+        await _context.Admins.AddAsync(admin);
+    }
+
     public async Task UpdateAsync(User user)
     {
         _context.Users.Update(user);

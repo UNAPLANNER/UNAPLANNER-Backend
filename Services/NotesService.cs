@@ -44,4 +44,33 @@ public class NotesService : INotesService
             return (false, null, $"Error al obtener las notas: {ex.Message}");
         }
     }
+
+    public async Task<(bool Success, List<NoteResponse>? Notes, string? ErrorMessage)> GetStudentNotesByUserIdAsync(int userId, int? courseId = null)
+    {
+        try
+        {
+            var student = await _notesRepository.GetStudentByUserIdAsync(userId);
+            if (student == null)
+            {
+                return (false, null, $"Estudiante asociado al usuario {userId} no encontrado.");
+            }
+
+            var notes = await _notesRepository.GetNotesByUserIdAsync(userId, courseId);
+            var noteResponses = notes.Select(n => new NoteResponse
+            {
+                Id = n.Id,
+                Title = n.Title,
+                Content = n.Content,
+                CourseId = n.CourseId,
+                CreatedAt = n.CreatedAt,
+                UpdatedAt = n.LastUpdated
+            }).ToList();
+
+            return (true, noteResponses, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error al obtener las notas: {ex.Message}");
+        }
+    }
 }
