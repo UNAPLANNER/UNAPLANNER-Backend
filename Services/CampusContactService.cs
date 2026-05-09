@@ -1,6 +1,7 @@
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Mappers;
+using UNAPLANNER_API.Models.Entities;
 using UNAPLANNER_API.Repositories;
 
 namespace UNAPLANNER_API.Services;

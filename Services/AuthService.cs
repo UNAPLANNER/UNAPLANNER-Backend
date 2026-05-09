@@ -44,7 +44,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.TypeRole),
-            new Claim(ClaimTypes.Role, roleName) 
+            new Claim(ClaimTypes.Role, roleName)
         };
 
         var key = new SymmetricSecurityKey(
