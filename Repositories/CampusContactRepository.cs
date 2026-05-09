@@ -34,4 +34,25 @@ public class CampusContactRepository : ICampusContactRepository
         return await _context.CampusContacts
             .FirstOrDefaultAsync(cc => cc.Id == id && cc.IsStatus);
     }
+
+    public async Task<CampusContact> AddAsync(CampusContact contact)
+    {
+        _context.CampusContacts.Add(contact);
+        await _context.SaveChangesAsync();
+        return contact;
+    }
+
+    public async Task<bool> SoftDeleteAsync(int id)
+    {
+        var contact = await _context.CampusContacts
+            .FirstOrDefaultAsync(cc => cc.Id == id && cc.IsStatus);
+
+        if (contact == null)
+        {
+            return false;
+        }
+
+        contact.IsStatus = false;
+        return await _context.SaveChangesAsync() > 0;
+    }
 }

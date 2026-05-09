@@ -1,5 +1,7 @@
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Mappers;
+using UNAPLANNER_API.Models.Entities;
 using UNAPLANNER_API.Repositories;
 
 namespace UNAPLANNER_API.Services;
@@ -31,5 +33,27 @@ public class CampusContactService : ICampusContactService
         if (contact == null) return null;
         
         return CampusContactMapper.ToCampusContactResponse(contact);
+    }
+
+    public async Task<CampusContactResponse> CreateContactAsync(CreateCampusContactRequest request)
+    {
+        var contact = new CampusContact
+        {
+            CampusId = request.CampusId,
+            DepartamentName = request.DepartamentName.Trim(),
+            Phone = request.Phone.Trim(),
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            IsStatus = true,
+            CreatedDate = DateTime.Now
+        };
+
+        var created = await _campusContactRepository.AddAsync(contact);
+        return CampusContactMapper.ToCampusContactResponse(created);
+    }
+
+    public async Task<bool> DeleteContactAsync(int id)
+    {
+        return await _campusContactRepository.SoftDeleteAsync(id);
     }
 }

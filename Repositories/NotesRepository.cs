@@ -38,4 +38,33 @@ public class NotesRepository : INotesRepository
 
         return await query.ToListAsync();
     }
+
+    public async Task<Note?> GetNoteByIdAsync(int noteId)
+    {
+        return await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+    }
+
+    public async Task<Note> AddNoteAsync(Note note)
+    {
+        _context.Notes.Add(note);
+        await _context.SaveChangesAsync();
+        return note;
+    }
+
+    public Task UpdateNoteAsync(Note note)
+    {
+        _context.Notes.Update(note);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteNoteAsync(Note note)
+    {
+        _context.Notes.Remove(note);
+        return Task.CompletedTask;
+    }
+
+    public async Task<bool> SaveChangesAsync()
+    {
+        return await _context.SaveChangesAsync() > 0;
+    }
 }

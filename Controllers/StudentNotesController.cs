@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
@@ -63,6 +64,29 @@ public class StudentNotesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { message = $"Error al obtener las notas: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Crea una nota para el estudiante usando el ID de usuario devuelto por login.
+    /// </summary>
+    [HttpPost("user/{userId}/notes")]
+    public async Task<IActionResult> CreateNoteByUserId(int userId, [FromBody] CreateNoteRequest request)
+    {
+        try
+        {
+            var result = await _notesService.CreateNoteByUserIdAsync(userId, request);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Created($"/api/notes/{result.Note!.Id}", result.Note);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error al crear la nota: {ex.Message}" });
         }
     }
 }
