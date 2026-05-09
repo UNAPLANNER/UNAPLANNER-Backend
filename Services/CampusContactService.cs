@@ -54,4 +54,9 @@ public class CampusContactService : ICampusContactService
         var created = await _campusContactRepository.CreateAsync(entity);
         return CampusContactMapper.ToCampusContactResponse(created);
     }
+
+    public async Task<bool> DeleteContactAsync(int id)
+    {
+        return await _campusContactRepository.DeleteAsync(id);
+    }
 }
