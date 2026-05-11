@@ -23,27 +23,21 @@ public class UserStudentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-public async Task<IActionResult> DeleteUser(int id, [FromBody] DeleteUserRequest request)
-{
-    try
+    public async Task<IActionResult> DeleteUser(int id, [FromBody] DeleteUserRequest request)
     {
-        var deleted = await _userStudentService.DeleteUserStudent(id, request.CurrentPassword);
+        try
+        {
+            var deleted = await _userStudentService.DeleteUserStudent(id, request.CurrentPassword);
 
-        if (!deleted)
-            return Unauthorized(new { message = "Contraseña incorrecta o usuario no encontrado" });
+            if (!deleted)
+                return Unauthorized(new { message = "Contraseña incorrecta o usuario no encontrado" });
 
-        return Ok(new { message = $"Usuario ID {id} se ha eliminado existosamente" });
+            return Ok(new { message = $"Usuario ID {id} se ha eliminado exitosamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar el usuario", error = ex.Message });
+        }
     }
-    catch (Exception ex)
-    {
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            new { message = "Error al eliminar el usuario", error = ex.Message });
-    }
-}
-
-
-    
-
-
-    
 }
