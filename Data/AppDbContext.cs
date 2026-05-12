@@ -137,7 +137,7 @@ public class AppDbContext : DbContext
             .HasOne(s => s.User)
             .WithOne(u => u.Student)   
             .HasForeignKey<Student>(s => s.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Student → Career
         modelBuilder.Entity<Student>()

@@ -13,7 +13,7 @@ public class UserStudentRepository : IUserStudentRepository
         _context = context;
     }
 
-    public async Task<User?> GetByIdUserStudent(int id)
+        public async Task<User?> GetByIdUserStudent(int id)
         {
            return await _context.Users
             .Include(u => u.Student)
@@ -22,9 +22,7 @@ public class UserStudentRepository : IUserStudentRepository
             .Include(u => u.Files)
             .Include(u => u.Calendars)
             .FirstOrDefaultAsync(u => u.UserId == id);
-
         }
-
         public async Task<bool> DeleteUserStudent(int id, string currentPassword)
         {
             var user = await GetByIdUserStudent(id);
