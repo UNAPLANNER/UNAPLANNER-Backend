@@ -15,4 +15,5 @@ public class Campus
     // Relaciones
     public ICollection<Career> Careers { get; set; } = new List<Career>();
     public ICollection<CampusContact> CampusContacts { get; set; } = new List<CampusContact>();
+    public ICollection<Admin> Admins { get; set; } = new List<Admin>();
 }
