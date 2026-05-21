@@ -34,6 +34,8 @@ builder.Services.AddScoped<INotesRepository, NotesRepository>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<ICampusContactRepository, CampusContactRepository>();
 builder.Services.AddScoped<ICampusContactService, CampusContactService>();
+builder.Services.AddScoped<ICareerRepository, CareerRepository>();
+builder.Services.AddScoped<ICareerService, CareerService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
