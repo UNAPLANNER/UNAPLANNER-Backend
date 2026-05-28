@@ -45,6 +45,27 @@ public class CampusContactRepository : ICampusContactRepository
         return campusContact;
     }
 
+    public async Task<CampusContact?> UpdateAsync(CampusContact campusContact)
+    {
+        var existingContact = await _context.CampusContacts
+            .FirstOrDefaultAsync(cc => cc.Id == campusContact.Id && cc.IsStatus);
+        
+        if (existingContact == null)
+            return null;
+
+        // Update only the fields that can be modified
+        existingContact.DepartamentName = campusContact.DepartamentName;
+        existingContact.Phone = campusContact.Phone;
+        existingContact.CampusId = campusContact.CampusId;
+        existingContact.Email = campusContact.Email;
+        existingContact.Description = campusContact.Description;
+
+        _context.CampusContacts.Update(existingContact);
+        await _context.SaveChangesAsync();
+        
+        return await GetByIdAsync(existingContact.Id);
+    }
+
     public async Task<bool> CampusExistsAsync(int campusId)
     {
         return await _context.Campuses.AnyAsync(c => c.Id == campusId && c.IsStatus);
