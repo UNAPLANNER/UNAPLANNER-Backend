@@ -41,4 +41,25 @@ public class CampusContactMapper
             CreatedDate = DateTime.Now
         };
     }
+
+    /// <summary>
+    /// Maps an UpdateCampusContactRequest to a CampusContact entity.
+    /// Preserves the ID and creation date of the existing contact.
+    /// </summary>
+    /// <param name="request">The update request with new contact data</param>
+    /// <param name="id">The ID of the contact being updated</param>
+    /// <returns>A CampusContact entity with updated values</returns>
+    public static CampusContact ToEntity(UpdateCampusContactRequest request, int id)
+    {
+        return new CampusContact
+        {
+            Id = id,
+            CampusId = request.CampusId,
+            DepartamentName = request.DepartamentName,
+            Phone = request.Phone,
+            Email = request.Email,
+            Description = request.Description,
+            IsStatus = true
+        };
+    }
 }
