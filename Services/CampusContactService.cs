@@ -55,6 +55,33 @@ public class CampusContactService : ICampusContactService
         return CampusContactMapper.ToCampusContactResponse(created);
     }
 
+    /// <summary>
+    /// Updates an existing campus contact with the provided information.
+    /// Validates that the campus exists before updating.
+    /// </summary>
+    /// <param name="id">The ID of the campus contact to update</param>
+    /// <param name="request">The update request containing new contact data</param>
+    /// <returns>The updated campus contact response, or null if not found</returns>
+    public async Task<CampusContactResponse?> UpdateContactAsync(int id, UpdateCampusContactRequest request)
+    {
+        var existingContact = await _campusContactRepository.GetByIdAsync(id);
+        if (existingContact == null)
+            return null;
+
+        // Validate that the new campus exists
+        var campusExists = await _campusContactRepository.CampusExistsAsync(request.CampusId);
+        if (!campusExists)
+            throw new InvalidOperationException($"El campus con ID {request.CampusId} no existe.");
+
+        var entity = CampusContactMapper.ToEntity(request, id);
+        var updated = await _campusContactRepository.UpdateAsync(entity);
+        
+        if (updated == null)
+            return null;
+
+        return CampusContactMapper.ToCampusContactResponse(updated);
+    }
+
     public async Task<bool> DeleteContactAsync(int id)
     {
         return await _campusContactRepository.DeleteAsync(id);
