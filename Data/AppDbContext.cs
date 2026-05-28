@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
 
     // Admin
+    public DbSet<Admin> Admins => Set<Admin>();
     public DbSet<AdminLog> AdminLogs => Set<AdminLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -77,6 +78,10 @@ public class AppDbContext : DbContext
         // Student
         modelBuilder.Entity<Student>()
             .HasIndex(s => s.UserId)
+            .IsUnique();
+
+        modelBuilder.Entity<Admin>()
+            .HasIndex(a => a.UserId)
             .IsUnique();
 
         // Course
@@ -137,6 +142,18 @@ public class AppDbContext : DbContext
             .HasOne(s => s.User)
             .WithOne(u => u.Student)   
             .HasForeignKey<Student>(s => s.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.User)
+            .WithOne(u => u.Admin)
+            .HasForeignKey<Admin>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.Campus)
+            .WithMany(c => c.Admins)
+            .HasForeignKey(a => a.CampusId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Student → Career

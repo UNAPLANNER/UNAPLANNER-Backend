@@ -22,11 +22,13 @@ builder.Services.AddControllers();
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
 
 // Repositories & Services
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<INotesRepository, NotesRepository>();
 builder.Services.AddScoped<INotesService, NotesService>();
@@ -114,6 +116,23 @@ using (var scope = app.Services.CreateScope())
 
         context.Users.Add(admin);
         context.SaveChanges();
+    }
+
+    var adminUser = context.Users.FirstOrDefault(u => u.Email == adminEmail);
+    if (adminUser != null && !context.Admins.Any(a => a.UserId == adminUser.UserId))
+    {
+        var campusId = context.Campuses.Select(c => c.Id).FirstOrDefault();
+        if (campusId != 0)
+        {
+            context.Admins.Add(new Admin
+            {
+                UserId = adminUser.UserId,
+                FullName = "Administrador UNAPlanner",
+                Department = "Administracion",
+                CampusId = campusId
+            });
+            context.SaveChanges();
+        }
     }
 }
 
