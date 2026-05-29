@@ -40,7 +40,7 @@ paths:
                     title: "Examen Final - Estructuras de Datos"
                     description: "Examen comprensivo de la materia"
                     activityDate: "2026-06-15T14:00:00"
-                    activityType: "Exam"
+                    activityType: "Examen"
                     courseId: 101
                     courseName: "Estructuras de Datos"
                     hasReminder: true
@@ -51,7 +51,7 @@ paths:
                     title: "Entrega de Proyecto Final"
                     description: "Proyecto integrador del semestre"
                     activityDate: "2026-06-10T23:59:00"
-                    activityType: "Project"
+                    activityType: "Proyecto"
                     courseId: 102
                     courseName: "Ingeniería de Software"
                     hasReminder: true
@@ -84,6 +84,124 @@ paths:
                   message:
                     type: string
                     example: "Error al obtener el calendario del estudiante"
+                  error:
+                    type: string
+
+    post:
+      tags:
+        - Student Calendar
+      summary: Crear un nuevo evento en el calendario del estudiante
+      description: |
+        Crea un nuevo evento en el calendario del estudiante (examen, tarea, proyecto, etc.).
+        El ID del evento se genera automáticamente en el servidor.
+        La fecha del evento no puede ser anterior a la fecha actual.
+      operationId: createCalendarEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante propietario del evento
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCalendarEventRequest'
+            examples:
+              examen:
+                summary: Crear un evento de examen
+                value:
+                  title: "Examen Final - Estructuras de Datos"
+                  description: "Examen comprensivo de la materia"
+                  activityDate: "2026-06-15T14:00:00"
+                  activityType: "Examen"
+                  courseId: 101
+                  hasReminder: true
+                  reminderDate: "2026-06-14T14:00:00"
+              tarea:
+                summary: Crear una tarea sin recordatorio
+                value:
+                  title: "Tarea 5 - Recursión"
+                  description: "Resolver problemas de recursión en programación"
+                  activityDate: "2026-06-05T23:59:00"
+                  activityType: "Tarea"
+                  courseId: 102
+                  hasReminder: false
+              proyecto:
+                summary: Crear un proyecto
+                value:
+                  title: "Entrega de Proyecto Final"
+                  description: "Proyecto integrador del semestre"
+                  activityDate: "2026-06-10T23:59:00"
+                  activityType: "Proyecto"
+                  courseId: 103
+                  hasReminder: true
+                  reminderDate: "2026-06-08T23:59:00"
+      responses:
+        "201":
+          description: Evento del calendario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEventResponse'
+              example:
+                id: 25
+                title: "Examen Final - Estructuras de Datos"
+                description: "Examen comprensivo de la materia"
+                activityDate: "2026-06-15T14:00:00"
+                activityType: "Examen"
+                courseId: 101
+                courseName: "Estructuras de Datos"
+                hasReminder: true
+                reminderDate: "2026-06-14T14:00:00"
+                isCompleted: false
+                createdDate: "2026-05-28T10:30:00"
+        "400":
+          description: Datos inválidos en la solicitud
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                campos_requeridos:
+                  summary: Campos requeridos faltantes
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      Title:
+                        - "El título del evento es obligatorio"
+                      ActivityDate:
+                        - "La fecha del evento es obligatoria"
+                      ActivityType:
+                        - "El tipo de actividad es obligatorio"
+                fecha_pasada:
+                  summary: Fecha en el pasado
+                  value:
+                    message: "La fecha del evento no puede ser anterior a la fecha actual"
+        "404":
+          description: Estudiante no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Estudiante con ID 99 no encontrado"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al crear el evento del calendario"
                   error:
                     type: string
 
@@ -123,7 +241,7 @@ paths:
                 title: "Examen Final - Estructuras de Datos"
                 description: "Examen comprensivo de la materia cobriendo todos los temas del semestre"
                 activityDate: "2026-06-15T14:00:00"
-                activityType: "Exam"
+                activityType: "Examen"
                 courseId: 101
                 courseName: "Estructuras de Datos"
                 hasReminder: true
@@ -326,13 +444,15 @@ components:
           example: "2026-06-15T14:00:00"
         activityType:
           type: string
-          description: Tipo de actividad (Exam, Assignment, Project, etc.)
+          description: Tipo de actividad
           enum:
-            - Exam
-            - Assignment
-            - Project
-            - Other
-          example: "Exam"
+            - Examen
+            - Tarea
+            - Proyecto
+            - Exposicion
+            - Evento
+            - Otro
+          example: "Examen"
         courseId:
           type: integer
           nullable: true
@@ -400,3 +520,54 @@ components:
             $ref: '#/components/schemas/CalendarEventResponse'
         summary:
           $ref: '#/components/schemas/CalendarSummaryStats'
+
+    CreateCalendarEventRequest:
+      type: object
+      required:
+        - title
+        - activityDate
+        - activityType
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: Título del evento (obligatorio)
+          example: "Examen Final - Estructuras de Datos"
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: Descripción opcional del evento
+          example: "Examen comprensivo de la materia"
+        activityDate:
+          type: string
+          format: date-time
+          description: Fecha y hora cuando ocurre el evento (obligatorio, no puede ser en el pasado)
+          example: "2026-06-15T14:00:00"
+        activityType:
+          type: string
+          maxLength: 50
+          description: Tipo de actividad (obligatorio) - Valores permitidos: Examen, Tarea, Proyecto, Exposicion, Evento, Otro
+          enum:
+            - Examen
+            - Tarea
+            - Proyecto
+            - Exposicion
+            - Evento
+            - Otro
+          example: "Examen"
+        courseId:
+          type: integer
+          nullable: true
+          description: ID del curso asociado (opcional)
+          example: 101
+        hasReminder:
+          type: boolean
+          description: Indica si el evento debe tener un recordatorio (por defecto false)
+          example: true
+        reminderDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha y hora del recordatorio (opcional)
+          example: "2026-06-14T14:00:00"
