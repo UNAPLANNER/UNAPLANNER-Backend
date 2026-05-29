@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
@@ -143,6 +144,46 @@ public class StudentCalendarController : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError, 
                 new { message = "Error al obtener el calendario del estudiante", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Creates a new calendar event for a student.
+    /// Validates the event data and generates the event ID automatically.
+    /// </summary>
+    /// <param name="id">The student ID</param>
+    /// <param name="request">The create event request containing event information</param>
+    [HttpPost("{id}/calendar")]
+    [ProducesResponseType(typeof(CalendarEventResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateCalendarEvent(int id, [FromBody] CreateCalendarEventRequest request)
+    {
+        // Validate the request body
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var createdEvent = await _calendarService.CreateCalendarEventAsync(id, request);
+
+            if (createdEvent == null)
+                return NotFound(new { message = $"Estudiante con ID {id} no encontrado" });
+
+            return CreatedAtAction(nameof(GetEventDetail), new { id, eventId = createdEvent.Id }, createdEvent);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Handle validation errors like past dates or invalid course
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Get the inner exception details for database errors
+            var innerError = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "Error al crear el evento del calendario", error = innerError });
         }
     }
 }
