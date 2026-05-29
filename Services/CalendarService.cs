@@ -1,4 +1,5 @@
 using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.Mappers;
 using UNAPLANNER_API.Repositories;
 
@@ -62,6 +63,47 @@ public class CalendarService : ICalendarService
         var events = await _calendarRepository.GetEventsByActivityTypeAsync(student.UserId, activityType);
         
         return BuildCalendarResponse(events);
+    }
+
+    /// <summary>
+    /// Creates a new calendar event for a student
+    /// Validates that the student exists and optionally validates the course if provided
+    /// </summary>
+    public async Task<CalendarEventResponse?> CreateCalendarEventAsync(int studentId, CreateCalendarEventRequest request)
+    {
+        // Validate that the student exists
+        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        if (student == null)
+            return null;
+
+        // Validate activity date is not in the past
+        if (request.ActivityDate < DateTime.Now)
+            throw new InvalidOperationException("La fecha del evento no puede ser anterior a la fecha actual");
+
+        // Validate that the course exists if provided
+        if (request.CourseId.HasValue && request.CourseId > 0)
+        {
+            var courseExists = await _calendarRepository.CourseExistsAsync(request.CourseId.Value);
+            if (!courseExists)
+                throw new InvalidOperationException($"El curso con ID {request.CourseId} no existe");
+        }
+
+        try
+        {
+            // Create the calendar entity from the request
+            var calendarEvent = CalendarMapper.ToEntity(request, student.UserId);
+            
+            // Save to database
+            var createdEvent = await _calendarRepository.CreateAsync(calendarEvent);
+            
+            // Return the response with the generated ID
+            return CalendarMapper.ToCalendarEventResponse(createdEvent);
+        }
+        catch (Exception ex)
+        {
+            // Re-throw with more context
+            throw new InvalidOperationException($"Error al guardar el evento: {ex.InnerException?.Message ?? ex.Message}", ex);
+        }
     }
 
     /// <summary>
