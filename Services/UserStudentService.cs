@@ -18,9 +18,11 @@ namespace UNAPLANNER_API.Services;
 
         public async Task<bool> DeleteUserStudent(int id, string currentPassword)
         {
+            // Retrieves the user by ID
             var user = await _userStudentRepository.GetByIdUserStudent(id);
             if (user == null) return false;
 
+            // Verifies if the provided password matches the stored password
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(currentPassword, user.Password);
             if (!isPasswordValid) return false;
 

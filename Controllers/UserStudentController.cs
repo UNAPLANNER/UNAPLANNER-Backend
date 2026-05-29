@@ -16,7 +16,7 @@ public class UserStudentController : ControllerBase
         _userStudentService = userStudentService;
     }
     /// <summary>
-    /// Elimina el usuario actual y los datos de los alumnos asociados
+    /// Deletes the current user and the associated student data
     /// </summary>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
