@@ -8,6 +8,7 @@ public interface ICampusContactRepository
     Task<List<CampusContact>> GetByCampusIdAsync(int campusId);
     Task<CampusContact?> GetByIdAsync(int id);
     Task<CampusContact> CreateAsync(CampusContact campusContact);
+    Task<CampusContact?> UpdateAsync(CampusContact campusContact);
     Task<bool> CampusExistsAsync(int campusId);
     Task<bool> DeleteAsync(int id);
 }
