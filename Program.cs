@@ -36,7 +36,8 @@ builder.Services.AddScoped<ICampusContactRepository, CampusContactRepository>();
 builder.Services.AddScoped<ICampusContactService, CampusContactService>();
 builder.Services.AddScoped<IUserStudentRepository, UserStudentRepository>();
 builder.Services.AddScoped<IUserStudentService, UserStudentService>();
-
+builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();

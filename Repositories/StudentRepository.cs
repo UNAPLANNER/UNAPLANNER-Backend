@@ -18,6 +18,12 @@ public class StudentRepository : IStudentRepository
         await _context.SaveChangesAsync();
         return student;
     }
-    
 
+    public async Task<Student?> GetStudentByIdAsync(int studentId)
+    {
+        return await _context.Students
+            .Include(s => s.User)
+            .FirstOrDefaultAsync(s => s.StudentId == studentId && s.IsStatus);
+    }
 }
+
