@@ -14,4 +14,5 @@ public interface IStudentRepository
     /// <param name="studentId">The student ID</param>
     /// <returns>Student if found, null otherwise</returns>
     Task<Student?> GetStudentByIdAsync(int studentId);
+    Task<Student?> GetStudentByUserIdAsync(int userId);
 }
