@@ -38,6 +38,10 @@ builder.Services.AddScoped<IUserStudentRepository, UserStudentRepository>();
 builder.Services.AddScoped<IUserStudentService, UserStudentService>();
 builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<ICareerRepository, CareerRepository>();
+builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
+builder.Services.AddScoped<ICareerService, CareerService>();
+builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
