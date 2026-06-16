@@ -16,11 +16,14 @@ public class CareerRepository : ICareerRepository
     public async Task<List<Career>> GetAllAsync()
     {
         return await _context.Careers
-            .AsNoTracking()
-            .Include(career => career.Campus)
-            .Include(career => career.StudyPlans)
-                .ThenInclude(studyPlan => studyPlan.StudyPlanCourses)
-            .OrderBy(career => career.Name)
+            .Where(c => c.IsStatus)
+            .OrderBy(c => c.Name)
             .ToListAsync();
+    }
+
+    public async Task<Career?> GetByIdAsync(int id)
+    {
+        return await _context.Careers
+            .FirstOrDefaultAsync(c => c.Id == id && c.IsStatus);
     }
 }

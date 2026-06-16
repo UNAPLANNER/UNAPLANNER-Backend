@@ -9,17 +9,20 @@ public class CreateUserRequest
 {
 
     [Required(ErrorMessage = "El correo es obligatorio")]
-    [EmailAddress(ErrorMessage = "Formato de correo inválido")]
-    [DefaultValue("usuario@una.ac.cr")]
+    [RegularExpression(
+        @"^[\p{L}]+\.[\p{L}]+\.[\p{L}]+@est\.una\.ac\.cr$",
+        ErrorMessage = "El correo debe tener formato nombre.primerapellido.segundoapellido@est.una.ac.cr"
+    )]
+    [DefaultValue("nombre.primerapellido.segundoapellido@est.una.ac.cr")]
     public string Email { get; set; } = string.Empty;
 
     [Required, MinLength(8)]
     public string Password { get; set; } = string.Empty;
 
-     [JsonIgnore]
+    [JsonIgnore]
     public int RoleId { get; set; }
 
-    //aplica si el rol es Student
+    //Apply if the role is Student
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El año es obligatorio")]
@@ -32,7 +35,7 @@ public class CreateUserRequest
     public int? StudyPlanId { get; set; }
 
     /// <summary>
-    /// Validación personalizada para asegurar que el año no sea mayor al actual.
+    ///  Custom validation to ensure that the year is not greater than the current year.
     /// </summary>
     public class CurrentYearOrLessAttribute : ValidationAttribute
     {

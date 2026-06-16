@@ -4,5 +4,6 @@ namespace UNAPLANNER_API.Services;
 
 public interface ICareerService
 {
-    Task<List<CareerResponse>> GetAllAsync();
+    Task<List<CareerResponse>> GetAllCareersAsync();
+    Task<List<LevelCurriculumResponse>> GetCurriculumByCareerIdAsync(int careerId, int? userId = null);
 }
