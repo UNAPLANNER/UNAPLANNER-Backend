@@ -151,4 +151,44 @@ public class CampusContactsController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error al crear el contacto", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Updates an existing campus contact. Only accessible to Admin.
+    /// Validates required fields, email format, and campus existence.
+    /// </summary>
+    /// <param name="id">The ID of the campus contact to update</param>
+    /// <param name="request">The update request with new contact information</param>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateContact(int id, [FromBody] UpdateCampusContactRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var contact = await _campusContactService.UpdateContactAsync(id, request);
+
+            if (contact == null)
+                return NotFound(new { message = $"Contacto con ID {id} no encontrado" });
+
+            return Ok(contact);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(request.CampusId), ex.Message);
+            return ValidationProblem(ModelState);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error al actualizar el contacto", error = ex.Message });
+        }
+    }
 }
+
