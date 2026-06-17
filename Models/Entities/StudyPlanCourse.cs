@@ -14,6 +14,8 @@ public class StudyPlanCourse
 
     public bool IsElective { get; set; } = false;
 
+    public string ElectiveType { get; set; } = "Obligatorio"; // Obligatorio | OptativoDisciplinario | OptativoLibre
+
     public bool IsStatus { get; set; } = true;
 
     public DateTime CreatedDate { get; set; } = DateTime.Now;

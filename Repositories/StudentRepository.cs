@@ -25,5 +25,12 @@ public class StudentRepository : IStudentRepository
             .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.StudentId == studentId && s.IsStatus);
     }
+
+    public async Task<Student?> GetStudentByUserIdAsync(int userId)
+    {
+        return await _context.Students
+            .Include(s => s.StudyPlan).ThenInclude(sp => sp.Career)
+            .FirstOrDefaultAsync(s => s.UserId == userId && s.IsStatus);
+    }
 }
 
