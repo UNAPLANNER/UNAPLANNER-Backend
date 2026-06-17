@@ -23,7 +23,9 @@ public static class StudentMapper
             UserId = student.UserId,
             FullName = student.FullName,
             CareerId = student.CareerId,
-            EnterYear = student.EnterYear
+            CareerName = student.Career?.Name ?? "", 
+            EnterYear = student.EnterYear,
+            Email      = student.User?.Email ?? "" 
         };
     }
 }

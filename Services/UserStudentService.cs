@@ -69,5 +69,19 @@ public class UserStudentService : IUserStudentService
         // Convert the updated entity to a response DTO
         return StudentMapper.ToResponse(updatedStudent);
     }
+
+    /** Retrieves the student profile associated with the authenticated user and converts it to a response DTO, “userId” (user identifier)
+    An UpdateStudentResponseDto object containing the student's information,
+    or null if there is no student associated with the user**/
+
+    public async Task<UpdateStudentResponseDto?> GetStudentProfile(int userId)
+    {
+        // Reutiliza el mismo método del repository que ya existe
+        var student = await _userStudentRepository.GetStudentByUserIdWithUser(userId);
+
+        if (student == null) return null;
+
+        return StudentMapper.ToResponse(student);
+    }
 }
 

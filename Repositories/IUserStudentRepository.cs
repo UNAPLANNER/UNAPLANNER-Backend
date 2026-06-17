@@ -12,4 +12,6 @@ public interface IUserStudentRepository
     // STUDENT (UPDATE PROFILE)
     Task<Student?> UpdateStudentProfile(Student student);
     Task<Student?> GetStudentByUserId(int userId);
+    Task<Student?> GetStudentByUserIdWithUser(int userId);
+    
 }

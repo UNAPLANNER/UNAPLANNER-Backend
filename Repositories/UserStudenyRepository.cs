@@ -56,9 +56,11 @@ public class UserStudentRepository : IUserStudentRepository
         await _context.SaveChangesAsync();
 
         return await _context.Students
+            .Include(s => s.Career) 
+            .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.StudentId == student.StudentId);
     }
-    
+
     /**Retrieves a student from the database using the associated user ID.
     The ID of the user linked to the student
     Returns the student entity if found, otherwise null**/
@@ -66,6 +68,15 @@ public class UserStudentRepository : IUserStudentRepository
     public async Task<Student?> GetStudentByUserId(int userId)
     {
         return await _context.Students
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+    }
+    /** Retrieves a student by UserId, including the user's information and the associated degree program. 
+    “userId”>User ID. The student found, or null if no such student exists**/
+    public async Task<Student?> GetStudentByUserIdWithUser(int userId)
+    {
+        return await _context.Students
+            .Include(s => s.User)
+            .Include(s => s.Career)
             .FirstOrDefaultAsync(s => s.UserId == userId);
     }
 
