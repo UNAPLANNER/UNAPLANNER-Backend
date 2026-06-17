@@ -70,30 +70,41 @@ public class CurriculumService : ICurriculumService
         }
     }
 
-    public async Task<(bool Success, StudentCourseProgressResponse? Course, string? ErrorMessage)> UpdateCourseStatusAsync(
+    public async Task<(bool Success, bool IsBadRequest, StudentCourseProgressResponse? Course, string? ErrorMessage)> UpdateCourseStatusAsync(
         int studentId, int courseId, UpdateCourseStatusRequest request)
     {
         try
         {
             var student = await _curriculumRepository.GetStudentByIdAsync(studentId);
             if (student == null)
-                return (false, null, $"Estudiante con ID {studentId} no encontrado.");
+                return (false, false, null, $"Estudiante con ID {studentId} no encontrado.");
 
             var studyPlanCourses = await _curriculumRepository.GetStudyPlanCoursesAsync(student.StudyPlanId);
             var spc = studyPlanCourses.FirstOrDefault(c => c.CourseId == courseId);
             if (spc == null)
-                return (false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
+                return (false, false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
 
+            var currentProgress = await _curriculumRepository.GetStudentProgressForCourseAsync(studentId, courseId);
+            var currentStatus = currentProgress?.Status ?? "Pendiente";
+
+            if (currentStatus == "Aprobado" && request.Status != "Aprobado")
+                return (false, true, null, $"El curso con ID {courseId} ya está Aprobado y no puede cambiar de estado.");
+
+            bool gradeApplies = request.Status == "Aprobado" || request.Status == "Reprobado";
+            bool isPending   = request.Status == "Pendiente";
+            int? safeYear    = (request.Year is > 0) ? request.Year : null;
             var progress = await _curriculumRepository.UpsertStudentProgressAsync(
                 studentId, courseId, request.Status,
-                request.FinalGrade, request.Semester, request.Year);
+                gradeApplies ? request.FinalGrade : null,
+                isPending ? null : request.Semester,
+                isPending ? null : safeYear);
 
             var response = CurriculumMapper.ToStudentCourseProgressResponse(spc, progress);
-            return (true, response, null);
+            return (true, false, response, null);
         }
         catch (Exception ex)
         {
-            return (false, null, $"Error al actualizar el estado del curso: {ex.Message}");
+            return (false, false, null, $"Error al actualizar el estado del curso: {ex.Message}");
         }
     }
 }

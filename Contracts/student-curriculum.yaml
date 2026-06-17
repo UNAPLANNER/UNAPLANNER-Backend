@@ -117,6 +117,7 @@ paths:
         - El curso debe pertenecer al plan de estudios del estudiante.
         - `finalGrade` solo aplica cuando el estado es `Aprobado` o `Reprobado`.
         - `semester` debe ser `1` o `2`.
+        - Un curso con estado `Aprobado` no puede cambiar a ningún otro estado.
       operationId: updateCourseStatus
       parameters:
         - name: id
@@ -184,7 +185,7 @@ paths:
                 semester: 1
                 year: 2025
         "400":
-          description: Datos de solicitud inválidos
+          description: Datos de solicitud inválidos o violación de regla de negocio
           content:
             application/json:
               schema:
@@ -206,6 +207,10 @@ paths:
                     errors:
                       FinalGrade:
                         - "La nota final debe estar entre 0 y 100"
+                curso_ya_aprobado:
+                  summary: Curso ya aprobado no puede cambiar de estado
+                  value:
+                    message: "El curso con ID 12 ya está Aprobado y no puede cambiar de estado."
         "404":
           description: Estudiante o curso no encontrado
           content:

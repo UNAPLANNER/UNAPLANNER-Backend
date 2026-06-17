@@ -156,6 +156,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(a => a.CampusId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.User)
+            .WithOne(u => u.Admin)
+            .HasForeignKey<Admin>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.Campus)
+            .WithMany(c => c.Admins)
+            .HasForeignKey(a => a.CampusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Student → Career
         modelBuilder.Entity<Student>()
             .HasOne(s => s.Career)
