@@ -10,10 +10,12 @@ namespace UNAPLANNER_API.Controllers;
 public class StudentCurriculumController : ControllerBase
 {
     private readonly ICurriculumService _curriculumService;
+    private readonly ILogger<StudentCurriculumController> _logger;
 
-    public StudentCurriculumController(ICurriculumService curriculumService)
+    public StudentCurriculumController(ICurriculumService curriculumService, ILogger<StudentCurriculumController> logger)
     {
         _curriculumService = curriculumService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -86,19 +88,29 @@ public class StudentCurriculumController : ControllerBase
     public async Task<IActionResult> UpdateCourseStatus(int id, int courseId, [FromBody] UpdateCourseStatusRequest request)
     {
         if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("PUT student/{Id}/courses/{CourseId} — validación fallida: {Errors}",
+                id, courseId, ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
             return ValidationProblem(ModelState);
+        }
 
         try
         {
             var result = await _curriculumService.UpdateCourseStatusAsync(id, courseId, request);
 
             if (!result.Success)
+            {
+                _logger.LogWarning("PUT student/{Id}/courses/{CourseId} — {Error}", id, courseId, result.ErrorMessage);
+                if (result.IsBadRequest)
+                    return BadRequest(new { message = result.ErrorMessage });
                 return NotFound(new { message = result.ErrorMessage });
+            }
 
             return Ok(result.Course);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "PUT student/{Id}/courses/{CourseId} — excepción", id, courseId);
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Error al actualizar el estado del curso", error = ex.Message });
         }
