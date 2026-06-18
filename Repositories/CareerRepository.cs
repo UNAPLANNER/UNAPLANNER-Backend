@@ -69,4 +69,31 @@ public class CareerRepository : ICareerRepository
 
         return career;
     }
+
+    public async Task<bool> ExistsByNameAsync(int campusId, string name)
+    {
+        return await _context.Careers
+            .AsNoTracking()
+            .AnyAsync(c => c.CampusId == campusId && c.Name.ToLower() == name.ToLower());
+    }
+
+    public async Task<bool> ExistsByCodeAsync(int campusId, string code)
+    {
+        return await _context.Careers
+            .AsNoTracking()
+            .AnyAsync(c => c.CampusId == campusId && c.Code.ToLower() == code.ToLower());
+    }
+
+    public async Task<Career> CreateAsync(Career career)
+    {
+        _context.Careers.Add(career);
+        await _context.SaveChangesAsync();
+
+        return await _context.Careers
+            .AsNoTracking()
+            .Include(c => c.Campus)
+            .Include(c => c.StudyPlans)
+                .ThenInclude(sp => sp.StudyPlanCourses)
+            .FirstAsync(c => c.Id == career.Id);
+    }
 }

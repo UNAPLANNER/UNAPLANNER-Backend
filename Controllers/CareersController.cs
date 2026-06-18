@@ -1,7 +1,4 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Services;
 
@@ -39,48 +36,6 @@ public class CareersController : ControllerBase
     }
 
     /// <summary>
-    /// Updates an existing career for the authenticated administrator's campus.
-    /// </summary>
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(CareerResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UpdateCareer(int id, [FromBody] UpdateCareerRequest request)
-    {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
-        try
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                return Unauthorized(new { message = "No se pudo identificar el usuario autenticado." });
-            }
-
-            var career = await _careerService.UpdateCareerForAdminAsync(currentUserId.Value, id, request);
-            return Ok(career);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Error al actualizar la carrera", error = ex.Message });
-        }
-    }
-
-    /// <summary>
     /// Obtiene la malla curricular de una carrera organizada por nivel y semestre.
     /// Si se proporciona userId, incluye el progreso del estudiante.
     /// </summary>
@@ -106,11 +61,5 @@ public class CareersController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Error al obtener la malla curricular", error = ex.Message });
         }
-    }
-
-    private int? GetCurrentUserId()
-    {
-        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claimValue, out var userId) ? userId : null;
     }
 }

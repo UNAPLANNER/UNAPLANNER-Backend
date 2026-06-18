@@ -10,4 +10,7 @@ public interface ICareerRepository
     Task<Career?> GetEditableByIdAsync(int id);
     Task<bool> ExistsByCodeExcludingIdAsync(int careerId, string code);
     Task<Career> UpdateAsync(Career career);
+    Task<bool> ExistsByNameAsync(int campusId, string name);
+    Task<bool> ExistsByCodeAsync(int campusId, string code);
+    Task<Career> CreateAsync(Career career);
 }
