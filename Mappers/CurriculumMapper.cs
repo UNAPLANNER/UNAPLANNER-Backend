@@ -95,4 +95,45 @@ public class CurriculumMapper
             })
             .ToList();
     }
+
+    public static CourseDetailResponse ToCourseDetailResponse(
+        StudyPlanCourse spc,
+        StudentProgress? progress,
+        List<Requirement> prerequisites,
+        Dictionary<int, StudentProgress> prereqProgressDict)
+    {
+        var isEnrolled = progress?.Status is "EnCurso" or "Aprobado";
+        var detail = isEnrolled ? progress?.StudentCourseDetail : null;
+
+        return new CourseDetailResponse
+        {
+            CourseId = spc.Course.Id,
+            Code = spc.Course.Code,
+            Name = spc.Course.Name,
+            Credits = spc.Course.Credits,
+            TheoryHours = spc.Course.TheoryHours,
+            PracticeHours = spc.Course.PracticeHours,
+            LabHours = spc.Course.LabHours,
+            Level = spc.Levels,
+            Term = spc.Term,
+            IsElective = spc.IsElective,
+            ElectiveType = spc.ElectiveType,
+            Status = progress?.Status ?? "Pendiente",
+            FinalGrade = progress?.FinalGrade,
+            AcademicTerm = progress?.AcademicTerm,
+            TermYear = progress?.TermYear,
+            Prerequisites = prerequisites.Select(r => new PrerequisiteResponse
+            {
+                CourseId = r.RequiredCourse.Id,
+                Code = r.RequiredCourse.Code,
+                Name = r.RequiredCourse.Name,
+                RequirementType = r.RequirementType,
+                IsPassed = prereqProgressDict.TryGetValue(r.RequiredCourseId, out var rp) && rp.Status == "Aprobado"
+            }).ToList(),
+            ProfessorName = detail?.ProfessorName,
+            Classroom = detail?.Classroom,
+            Schedule = detail?.Schedule,
+            SyllabusUrl = detail?.SyllabusUrl
+        };
+    }
 }
