@@ -1,3 +1,4 @@
+using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Mappers;
 using UNAPLANNER_API.Models.Entities;
@@ -9,17 +10,56 @@ public class CareerService : ICareerService
 {
     private readonly ICareerRepository _careerRepository;
     private readonly ICurriculumRepository _curriculumRepository;
+    private readonly IProfileRepository _profileRepository;
 
-    public CareerService(ICareerRepository careerRepository, ICurriculumRepository curriculumRepository)
+    public CareerService(
+        ICareerRepository careerRepository,
+        ICurriculumRepository curriculumRepository,
+        IProfileRepository profileRepository)
     {
         _careerRepository = careerRepository;
         _curriculumRepository = curriculumRepository;
+        _profileRepository = profileRepository;
     }
 
     public async Task<List<CareerResponse>> GetAllCareersAsync()
     {
         var careers = await _careerRepository.GetAllAsync();
         return CareerMapper.ToResponseList(careers);
+    }
+
+    public async Task<List<CareerResponse>> GetCareersByAdminUserIdAsync(int userId)
+    {
+        var admin = await _profileRepository.GetAdminByUserIdAsync(userId);
+        if (admin == null)
+            throw new KeyNotFoundException("No se encontro el perfil administrativo del usuario autenticado.");
+
+        var careers = await _careerRepository.GetByCampusIdAsync(admin.CampusId);
+        return CareerMapper.ToResponseList(careers);
+    }
+
+    public async Task<CareerResponse> UpdateCareerForAdminAsync(int userId, int careerId, UpdateCareerRequest request)
+    {
+        var admin = await _profileRepository.GetAdminByUserIdAsync(userId);
+        if (admin == null)
+            throw new KeyNotFoundException("No se encontro el perfil administrativo del usuario autenticado.");
+
+        var career = await _careerRepository.GetEditableByIdAsync(careerId);
+        if (career == null || career.CampusId != admin.CampusId)
+            throw new KeyNotFoundException("No se encontro la carrera solicitada.");
+
+        var normalizedCode = request.Code.Trim().ToUpperInvariant();
+        if (await _careerRepository.ExistsByCodeExcludingIdAsync(careerId, normalizedCode))
+            throw new InvalidOperationException("Ya existe una carrera con ese codigo.");
+
+        career.Name = request.Name.Trim();
+        career.Code = normalizedCode;
+        career.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        career.TotalCredits = request.TotalCredits;
+        career.IsStatus = request.IsStatus;
+
+        var updated = await _careerRepository.UpdateAsync(career);
+        return CareerMapper.ToResponse(updated);
     }
 
     public async Task<List<LevelCurriculumResponse>> GetCurriculumByCareerIdAsync(int careerId, int? userId = null)

@@ -58,4 +58,20 @@ public class CalendarRepository : ICalendarRepository
     {
         return await _context.Courses.AnyAsync(c => c.Id == courseId);
     }
+
+    public async Task<Calendar> UpdateAsync(Calendar calendarEvent)
+    {
+        _context.Calendars.Update(calendarEvent);
+        await _context.SaveChangesAsync();
+        return calendarEvent;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var calendarEvent = await _context.Calendars.FindAsync(id);
+        if (calendarEvent == null) return false;
+        _context.Calendars.Remove(calendarEvent);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

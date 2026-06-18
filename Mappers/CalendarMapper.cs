@@ -62,4 +62,16 @@ public class CalendarMapper
             CreatedDate = DateTime.Now
         };
     }
+
+    public static void ApplyUpdate(Calendar entity, UpdateCalendarEventRequest request)
+    {
+        entity.Title = request.Title;
+        entity.Description = request.Description;
+        entity.ActivityDate = request.ActivityDate;
+        entity.ActivityType = request.ActivityType;
+        entity.CourseId = request.CourseId;
+        entity.HasReminder = request.HasReminder;
+        entity.ReminderDate = request.ReminderDate;
+        entity.IsCompleted = request.IsCompleted;
+    }
 }
