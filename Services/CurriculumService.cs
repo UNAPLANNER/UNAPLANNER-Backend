@@ -2,6 +2,7 @@ using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
 using UNAPLANNER_API.Mappers;
 using UNAPLANNER_API.Repositories;
+using UNAPLANNER_API.Models.Entities;
 
 namespace UNAPLANNER_API.Services;
 
@@ -105,6 +106,40 @@ public class CurriculumService : ICurriculumService
         catch (Exception ex)
         {
             return (false, false, null, $"Error al actualizar el estado del curso: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, CourseDetailResponse? Detail, string? ErrorMessage)> GetCourseDetailAsync(int studentId, int courseId)
+    {
+        try
+        {
+            var student = await _curriculumRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+                return (false, null, $"Estudiante con ID {studentId} no encontrado.");
+
+            var spc = await _curriculumRepository.GetStudyPlanCourseAsync(student.StudyPlanId, courseId);
+            if (spc == null)
+                return (false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
+
+            var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(studentId, courseId);
+            var prerequisites = await _curriculumRepository.GetCoursePrerequisitesAsync(courseId);
+
+            Dictionary<int, StudentProgress> prereqProgressDict = new();
+            if (prerequisites.Count > 0)
+            {
+                var allProgress = await _curriculumRepository.GetStudentProgressAsync(studentId);
+                var prereqIds = prerequisites.Select(r => r.RequiredCourseId).ToHashSet();
+                prereqProgressDict = allProgress
+                    .Where(p => prereqIds.Contains(p.CourseId))
+                    .ToDictionary(p => p.CourseId);
+            }
+
+            var detail = CurriculumMapper.ToCourseDetailResponse(spc, progress, prerequisites, prereqProgressDict);
+            return (true, detail, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error al obtener el detalle del curso: {ex.Message}");
         }
     }
 }
