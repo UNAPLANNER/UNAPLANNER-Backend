@@ -271,6 +271,145 @@ paths:
                   error:
                     type: string
 
+    put:
+      tags:
+        - Student Calendar
+      summary: Actualizar un evento del calendario
+      description: |
+        Actualiza los datos de un evento existente en el calendario del estudiante.
+        Permite modificar título, descripción, fecha, tipo de actividad, curso, recordatorio y estado de completado.
+      operationId: updateCalendarEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 1
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del evento del calendario a actualizar
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCalendarEventRequest'
+            example:
+              title: "Examen Final - Estructuras de Datos"
+              description: "Examen comprensivo actualizado"
+              activityDate: "2026-06-15T14:00:00"
+              activityType: "Examen"
+              courseId: 101
+              hasReminder: true
+              reminderDate: "2026-06-14T14:00:00"
+              isCompleted: false
+      responses:
+        "200":
+          description: Evento actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEventResponse'
+              example:
+                id: 1
+                title: "Examen Final - Estructuras de Datos"
+                description: "Examen comprensivo actualizado"
+                activityDate: "2026-06-15T14:00:00"
+                activityType: "Examen"
+                courseId: 101
+                courseName: "Estructuras de Datos"
+                hasReminder: true
+                reminderDate: "2026-06-14T14:00:00"
+                isCompleted: false
+                createdDate: "2026-05-20T10:30:00"
+        "400":
+          description: Datos inválidos en la solicitud
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "El curso con ID 99 no existe"
+        "404":
+          description: Estudiante o evento no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Evento del calendario con ID 99 no encontrado"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al actualizar el evento del calendario"
+                  error:
+                    type: string
+
+    delete:
+      tags:
+        - Student Calendar
+      summary: Eliminar un evento del calendario
+      description: |
+        Elimina permanentemente un evento del calendario del estudiante.
+        La operación no se puede deshacer.
+      operationId: deleteCalendarEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 1
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del evento del calendario a eliminar
+          example: 1
+      responses:
+        "204":
+          description: Evento eliminado exitosamente (sin contenido)
+        "404":
+          description: Estudiante o evento no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Evento del calendario con ID 99 no encontrado"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al eliminar el evento del calendario"
+                  error:
+                    type: string
+
   /api/student/{id}/calendar/filter/date-range:
     get:
       tags:
@@ -547,7 +686,7 @@ components:
         activityType:
           type: string
           maxLength: 50
-          description: Tipo de actividad (obligatorio) - Valores permitidos: Examen, Tarea, Proyecto, Exposicion, Evento, Otro
+          description: "Tipo de actividad (obligatorio) - Valores permitidos: Examen, Tarea, Proyecto, Exposicion, Evento, Otro"
           enum:
             - Examen
             - Tarea
@@ -571,3 +710,58 @@ components:
           nullable: true
           description: Fecha y hora del recordatorio (opcional)
           example: "2026-06-14T14:00:00"
+
+    UpdateCalendarEventRequest:
+      type: object
+      required:
+        - title
+        - activityDate
+        - activityType
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: Título del evento (obligatorio)
+          example: "Examen Final - Estructuras de Datos"
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: Descripción opcional del evento
+          example: "Examen comprensivo de la materia"
+        activityDate:
+          type: string
+          format: date-time
+          description: Fecha y hora cuando ocurre el evento (obligatorio)
+          example: "2026-06-15T14:00:00"
+        activityType:
+          type: string
+          maxLength: 50
+          description: "Tipo de actividad (obligatorio) - Valores permitidos: Examen, Tarea, Proyecto, Exposicion, Evento, Otro"
+          enum:
+            - Examen
+            - Tarea
+            - Proyecto
+            - Exposicion
+            - Evento
+            - Otro
+          example: "Examen"
+        courseId:
+          type: integer
+          nullable: true
+          description: ID del curso asociado (opcional)
+          example: 101
+        hasReminder:
+          type: boolean
+          description: Indica si el evento debe tener un recordatorio (por defecto false)
+          example: true
+        reminderDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha y hora del recordatorio (opcional)
+          example: "2026-06-14T14:00:00"
+        isCompleted:
+          type: boolean
+          description: Indica si el evento ha sido completado (por defecto false)
+          example: false
