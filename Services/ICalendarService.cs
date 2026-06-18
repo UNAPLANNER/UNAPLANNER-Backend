@@ -43,4 +43,21 @@ public interface ICalendarService
     /// <param name="request">The create event request with event data</param>
     /// <returns>The created calendar event response with generated ID</returns>
     Task<CalendarEventResponse?> CreateCalendarEventAsync(int studentId, CreateCalendarEventRequest request);
+
+    /// <summary>
+    /// Updates an existing calendar event for a student
+    /// </summary>
+    /// <param name="studentId">The student ID</param>
+    /// <param name="eventId">The calendar event ID to update</param>
+    /// <param name="request">The update event request with new data</param>
+    /// <returns>The updated event, null if student not found, throws KeyNotFoundException if event not found</returns>
+    Task<CalendarEventResponse?> UpdateCalendarEventAsync(int studentId, int eventId, UpdateCalendarEventRequest request);
+
+    /// <summary>
+    /// Deletes a calendar event belonging to a student
+    /// </summary>
+    /// <param name="studentId">The student ID</param>
+    /// <param name="eventId">The calendar event ID to delete</param>
+    /// <returns>True if deleted, false if event not found, null if student not found</returns>
+    Task<bool?> DeleteCalendarEventAsync(int studentId, int eventId);
 }
