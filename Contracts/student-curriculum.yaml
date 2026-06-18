@@ -1,0 +1,339 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API - Student Curriculum Progress
+  version: 1.0.0
+  description: |
+    Especificación de los endpoints para consultar y actualizar el progreso del estudiante
+    en su malla curricular. Permite ver todos los cursos con su estado actual y actualizar
+    el estado de un curso específico (Pendiente, EnCurso, Aprobado, Reprobado).
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /api/student/{id}/curriculum/courses:
+    get:
+      tags:
+        - Student Curriculum
+      summary: Obtener cursos del estudiante con progreso
+      description: |
+        Obtiene todos los cursos del plan de estudios del estudiante con su estado de progreso
+        actual. Los cursos sin progreso registrado aparecen con estado `Pendiente`.
+        Los resultados se ordenan por nivel y semestre.
+      operationId: getStudentCurriculumCourses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+      responses:
+        "200":
+          description: Cursos del estudiante obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentCourseProgressResponse'
+              example:
+                - courseId: 10
+                  code: "MAT-101"
+                  name: "Matemática General I"
+                  credits: 4
+                  isElective: false
+                  level: 1
+                  term: 1
+                  status: "Aprobado"
+                  finalGrade: 85.50
+                  semester: 1
+                  year: 2024
+                - courseId: 11
+                  code: "ESP-101"
+                  name: "Español"
+                  credits: 3
+                  isElective: false
+                  level: 1
+                  term: 1
+                  status: "Aprobado"
+                  finalGrade: 90.00
+                  semester: 1
+                  year: 2024
+                - courseId: 12
+                  code: "MAT-102"
+                  name: "Matemática General II"
+                  credits: 4
+                  isElective: false
+                  level: 1
+                  term: 2
+                  status: "EnCurso"
+                  finalGrade: null
+                  semester: 2
+                  year: 2024
+                - courseId: 20
+                  code: "PRO-201"
+                  name: "Programación I"
+                  credits: 4
+                  isElective: false
+                  level: 2
+                  term: 1
+                  status: "Pendiente"
+                  finalGrade: null
+                  semester: null
+                  year: null
+        "404":
+          description: Estudiante no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Estudiante con ID 99 no encontrado."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Error al obtener la malla curricular"
+                error: "Unexpected error"
+
+  /api/student/{id}/courses/{courseId}:
+    put:
+      tags:
+        - Student Curriculum
+      summary: Actualizar estado de un curso
+      description: |
+        Actualiza el estado de progreso de un curso en la malla curricular del estudiante.
+        Si el registro de progreso no existe, se crea automáticamente.
+
+        **Estados válidos:** `Pendiente`, `EnCurso`, `Aprobado`, `Reprobado`
+
+        **Reglas de negocio:**
+        - El curso debe pertenecer al plan de estudios del estudiante.
+        - `finalGrade` solo aplica cuando el estado es `Aprobado` o `Reprobado`.
+        - `semester` debe ser `1` o `2`.
+      operationId: updateCourseStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso a actualizar
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCourseStatusRequest'
+            examples:
+              marcar_en_curso:
+                summary: Marcar curso como En Curso
+                value:
+                  status: "EnCurso"
+                  semester: 2
+                  year: 2025
+              marcar_aprobado:
+                summary: Marcar curso como Aprobado con nota
+                value:
+                  status: "Aprobado"
+                  finalGrade: 88.50
+                  semester: 1
+                  year: 2025
+              marcar_reprobado:
+                summary: Marcar curso como Reprobado
+                value:
+                  status: "Reprobado"
+                  finalGrade: 45.00
+                  semester: 2
+                  year: 2024
+              restablecer_pendiente:
+                summary: Restablecer a Pendiente
+                value:
+                  status: "Pendiente"
+      responses:
+        "200":
+          description: Estado del curso actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentCourseProgressResponse'
+              example:
+                courseId: 12
+                code: "MAT-102"
+                name: "Matemática General II"
+                credits: 4
+                isElective: false
+                level: 1
+                term: 2
+                status: "Aprobado"
+                finalGrade: 88.50
+                semester: 1
+                year: 2025
+        "400":
+          description: Datos de solicitud inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                estado_invalido:
+                  summary: Estado fuera de los valores permitidos
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      Status:
+                        - "El estado debe ser: Pendiente, EnCurso, Aprobado o Reprobado"
+                nota_fuera_de_rango:
+                  summary: Nota fuera del rango permitido
+                  value:
+                    title: "One or more validation errors occurred."
+                    status: 400
+                    errors:
+                      FinalGrade:
+                        - "La nota final debe estar entre 0 y 100"
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                estudiante_no_encontrado:
+                  value:
+                    message: "Estudiante con ID 99 no encontrado."
+                curso_no_en_plan:
+                  value:
+                    message: "El curso con ID 50 no pertenece al plan de estudios del estudiante."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Error al actualizar el estado del curso"
+                error: "Unexpected error"
+
+components:
+  schemas:
+    StudentCourseProgressResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          description: ID único del curso
+          example: 12
+        code:
+          type: string
+          description: Código del curso
+          example: "MAT-102"
+        name:
+          type: string
+          description: Nombre del curso
+          example: "Matemática General II"
+        credits:
+          type: integer
+          description: Créditos del curso
+          example: 4
+        isElective:
+          type: boolean
+          description: Indica si el curso es electivo
+          example: false
+        level:
+          type: integer
+          description: Nivel académico del curso (año en la malla)
+          example: 1
+        term:
+          type: integer
+          description: Semestre del curso dentro del nivel (1 o 2)
+          enum: [1, 2]
+          example: 2
+        status:
+          type: string
+          description: Estado actual del estudiante en este curso
+          enum:
+            - Pendiente
+            - EnCurso
+            - Aprobado
+            - Reprobado
+          example: "Aprobado"
+        finalGrade:
+          type: number
+          format: decimal
+          nullable: true
+          description: Nota final obtenida (0-100), null si no aplica
+          example: 88.50
+        semester:
+          type: integer
+          nullable: true
+          description: Semestre académico en que se cursó o está cursando (1 o 2)
+          enum: [1, 2, null]
+          example: 1
+        year:
+          type: integer
+          nullable: true
+          description: Año en que se cursó o está cursando
+          example: 2025
+
+    UpdateCourseStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Nuevo estado del curso (obligatorio)
+          enum:
+            - Pendiente
+            - EnCurso
+            - Aprobado
+            - Reprobado
+          example: "Aprobado"
+        finalGrade:
+          type: number
+          format: decimal
+          nullable: true
+          minimum: 0
+          maximum: 100
+          description: Nota final del curso (opcional, aplica para Aprobado/Reprobado)
+          example: 88.50
+        semester:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 2
+          description: Semestre académico en que se cursó (1 o 2)
+          example: 1
+        year:
+          type: integer
+          nullable: true
+          description: Año académico en que se cursó
+          example: 2025
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        error:
+          type: string
+          description: Detalle técnico del error

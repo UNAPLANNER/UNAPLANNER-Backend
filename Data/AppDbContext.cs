@@ -156,6 +156,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(a => a.CampusId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.User)
+            .WithOne(u => u.Admin)
+            .HasForeignKey<Admin>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Admin>()
+            .HasOne(a => a.Campus)
+            .WithMany(c => c.Admins)
+            .HasForeignKey(a => a.CampusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Student → Career
         modelBuilder.Entity<Student>()
             .HasOne(s => s.Career)
@@ -336,9 +348,11 @@ public class AppDbContext : DbContext
             .ToTable(t =>
             {
                 t.HasCheckConstraint("CK_StudyPlanCourse_Levels",
-                    "Levels BETWEEN 1 AND 6");
+                    "Levels BETWEEN 1 AND 4");
                 t.HasCheckConstraint("CK_StudyPlanCourse_Term",
                     "Term IN (1, 2)");
+                t.HasCheckConstraint("CK_StudyPlanCourse_ElectiveType",
+                    "ElectiveType IN ('Obligatorio', 'OptativoDisciplinario', 'OptativoLibre')");
             });
 
         // Evaluation

@@ -1,0 +1,274 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API - Careers & Curriculum Map
+  version: 1.0.0
+  description: |
+    Especificación de los endpoints para listar carreras y visualizar la malla curricular.
+    La malla se organiza por nivel (año) y semestre. Si se proporciona userId, se superpone
+    el progreso real del estudiante sobre cada curso.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /api/careers:
+    get:
+      tags:
+        - Careers
+      summary: Listar todas las carreras
+      description: |
+        Obtiene todas las carreras activas disponibles en el sistema,
+        ordenadas alfabéticamente por nombre.
+      operationId: getAllCareers
+      responses:
+        "200":
+          description: Lista de carreras obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CareerResponse'
+              example:
+                - id: 1
+                  name: "Ingeniería en Sistemas de Información"
+                  code: "ISI-2020"
+                  description: "Carrera enfocada en el desarrollo y gestión de sistemas informáticos"
+                  totalCredits: 144
+                - id: 2
+                  name: "Administración de Empresas"
+                  code: "ADE-2019"
+                  description: null
+                  totalCredits: 136
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Error al obtener las carreras"
+                error: "Database connection failed"
+
+  /api/careers/{id}/curriculum:
+    get:
+      tags:
+        - Careers
+      summary: Obtener malla curricular de una carrera
+      description: |
+        Obtiene la malla curricular completa de una carrera organizada por nivel (año académico)
+        y por semestre dentro de cada nivel.
+
+        - Sin `userId`: devuelve todos los cursos con estado `Pendiente`.
+        - Con `userId`: cruza los datos con el progreso real del estudiante identificado
+          por ese usuario, mostrando el estado actualizado de cada curso (Pendiente, EnCurso,
+          Aprobado, Reprobado) y su nota final si aplica.
+      operationId: getCareerCurriculum
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID de la carrera
+          example: 1
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: ID del usuario (estudiante) para incluir su progreso en la malla
+          example: 5
+      responses:
+        "200":
+          description: Malla curricular obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LevelCurriculumResponse'
+              example:
+                - level: 1
+                  semesters:
+                    - semester: 1
+                      courses:
+                        - id: 10
+                          code: "MAT-101"
+                          name: "Matemática General I"
+                          credits: 4
+                          theoryHours: 4
+                          practiceHours: 0
+                          labHours: 0
+                          isElective: false
+                          status: "Aprobado"
+                          finalGrade: 85.50
+                        - id: 11
+                          code: "ESP-101"
+                          name: "Español"
+                          credits: 3
+                          theoryHours: 3
+                          practiceHours: 0
+                          labHours: 0
+                          isElective: false
+                          status: "Aprobado"
+                          finalGrade: 90.00
+                    - semester: 2
+                      courses:
+                        - id: 12
+                          code: "MAT-102"
+                          name: "Matemática General II"
+                          credits: 4
+                          theoryHours: 4
+                          practiceHours: 0
+                          labHours: 0
+                          isElective: false
+                          status: "EnCurso"
+                          finalGrade: null
+                - level: 2
+                  semesters:
+                    - semester: 1
+                      courses:
+                        - id: 20
+                          code: "PRO-201"
+                          name: "Programación I"
+                          credits: 4
+                          theoryHours: 2
+                          practiceHours: 2
+                          labHours: 0
+                          isElective: false
+                          status: "Pendiente"
+                          finalGrade: null
+        "404":
+          description: Carrera no encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "La carrera con ID 99 no existe."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Error al obtener la malla curricular"
+                error: "Unexpected error"
+
+components:
+  schemas:
+    CareerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único de la carrera
+          example: 1
+        name:
+          type: string
+          description: Nombre completo de la carrera
+          example: "Ingeniería en Sistemas de Información"
+        code:
+          type: string
+          description: Código único de la carrera
+          example: "ISI-2020"
+        description:
+          type: string
+          nullable: true
+          description: Descripción de la carrera
+          example: "Carrera enfocada en el desarrollo y gestión de sistemas informáticos"
+        totalCredits:
+          type: integer
+          description: Total de créditos requeridos para graduarse
+          example: 144
+
+    CurriculumCourseResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del curso
+          example: 10
+        code:
+          type: string
+          description: Código del curso
+          example: "MAT-101"
+        name:
+          type: string
+          description: Nombre del curso
+          example: "Matemática General I"
+        credits:
+          type: integer
+          description: Créditos del curso
+          example: 4
+        theoryHours:
+          type: integer
+          description: Horas de teoría por semana
+          example: 4
+        practiceHours:
+          type: integer
+          description: Horas de práctica por semana
+          example: 0
+        labHours:
+          type: integer
+          description: Horas de laboratorio por semana
+          example: 0
+        isElective:
+          type: boolean
+          description: Indica si el curso es electivo
+          example: false
+        status:
+          type: string
+          description: Estado del estudiante en este curso
+          enum:
+            - Pendiente
+            - EnCurso
+            - Aprobado
+            - Reprobado
+          example: "Aprobado"
+        finalGrade:
+          type: number
+          format: decimal
+          nullable: true
+          description: Nota final obtenida (0-100), null si no ha sido calificado
+          example: 85.50
+
+    SemesterCoursesResponse:
+      type: object
+      properties:
+        semester:
+          type: integer
+          description: Número de semestre dentro del nivel (1 o 2)
+          enum: [1, 2]
+          example: 1
+        courses:
+          type: array
+          description: Lista de cursos del semestre ordenados por nombre
+          items:
+            $ref: '#/components/schemas/CurriculumCourseResponse'
+
+    LevelCurriculumResponse:
+      type: object
+      properties:
+        level:
+          type: integer
+          description: Nivel académico (año de la carrera, del 1 al 6)
+          example: 1
+        semesters:
+          type: array
+          description: Semestres que componen este nivel, ordenados por número de semestre
+          items:
+            $ref: '#/components/schemas/SemesterCoursesResponse'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        error:
+          type: string
+          description: Detalle técnico del error
