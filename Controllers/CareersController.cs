@@ -16,7 +16,7 @@ public class CareersController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene todas las carreras disponibles
+    /// Get a list of all available majors.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<CareerResponse>), StatusCodes.Status200OK)]
