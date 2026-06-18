@@ -44,6 +44,8 @@ builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
 builder.Services.AddScoped<ICareerService, CareerService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddScoped<ICampusService, CampusService>();
+builder.Services.AddScoped<ICampusRepository, CampusRepository>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
