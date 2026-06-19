@@ -9,11 +9,16 @@ public class CalendarService : ICalendarService
 {
     private readonly ICalendarRepository _calendarRepository;
     private readonly IStudentRepository _studentRepository;
+    private readonly INotificationService _notificationService;
 
-    public CalendarService(ICalendarRepository calendarRepository, IStudentRepository studentRepository)
+    public CalendarService(
+        ICalendarRepository calendarRepository,
+        IStudentRepository studentRepository,
+        INotificationService notificationService)
     {
         _calendarRepository = calendarRepository;
         _studentRepository = studentRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<StudentCalendarResponse?> GetStudentCalendarAsync(int studentId)
@@ -51,7 +56,7 @@ public class CalendarService : ICalendarService
         
         return BuildCalendarResponse(events);
     }
-
+// This method retrieves calendar events for a student filtered by a specific activity type (e.g., "Exam", "Assignment"), validating that the student exists and then querying the calendar repository for events matching the criteria, returning a response with the filtered events and summary statistics.
     public async Task<StudentCalendarResponse?> GetStudentCalendarByActivityTypeAsync(int studentId, string activityType)
     {
         // Validate that the student exists
@@ -95,7 +100,19 @@ public class CalendarService : ICalendarService
             
             // Save to database
             var createdEvent = await _calendarRepository.CreateAsync(calendarEvent);
-            
+
+            // If the event has a reminder, send a notification to the student
+            if (createdEvent.HasReminder)
+            {
+                var reminderDate = createdEvent.ReminderDate ?? createdEvent.ActivityDate;
+                await _notificationService.SendActivityReminderAsync(
+                    student.UserId,
+                    createdEvent.Id,
+                    createdEvent.Title,
+                    createdEvent.ActivityType,
+                    reminderDate);
+            }
+
             // Return the response with the generated ID
             return CalendarMapper.ToCalendarEventResponse(createdEvent);
         }
@@ -105,7 +122,7 @@ public class CalendarService : ICalendarService
             throw new InvalidOperationException($"Error al guardar el evento: {ex.InnerException?.Message ?? ex.Message}", ex);
         }
     }
-
+// This method updates an existing calendar event for a student, validating that the student and event exist, ensuring the event belongs to the student, optionally validating the course if provided, applying the updates from the request, saving the changes to the database, and returning the updated event details in the response.
     public async Task<CalendarEventResponse?> UpdateCalendarEventAsync(int studentId, int eventId, UpdateCalendarEventRequest request)
     {
         var student = await _studentRepository.GetStudentByIdAsync(studentId);
@@ -127,7 +144,7 @@ public class CalendarService : ICalendarService
         var updatedEvent = await _calendarRepository.UpdateAsync(calendarEvent);
         return CalendarMapper.ToCalendarEventResponse(updatedEvent);
     }
-
+// This method deletes a calendar event for a student, validating that the student and event exist, ensuring the event belongs to the student, and then deleting the event from the database, returning true if the deletion was successful, false if the event was not found or did not belong to the student, and null if the student does not exist.
     public async Task<bool?> DeleteCalendarEventAsync(int studentId, int eventId)
     {
         var student = await _studentRepository.GetStudentByIdAsync(studentId);
