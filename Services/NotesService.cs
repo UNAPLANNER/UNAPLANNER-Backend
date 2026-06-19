@@ -65,6 +65,16 @@ public class NotesService : INotesService
                 return (false, null, "El título de la nota es requerido.");
             }
 
+            // Si se asocia a un curso, validar que esté EnCurso para este estudiante
+            if (request.CourseId.HasValue)
+            {
+                var isEnCurso = await _notesRepository.IsStudentCourseEnCursoAsync(studentId, request.CourseId.Value);
+                if (!isEnCurso)
+                {
+                    return (false, null, "Solo puedes agregar notas a cursos que están en curso actualmente.");
+                }
+            }
+
             // Crear la nota asociada al usuario del estudiante
             var note = new Note
             {

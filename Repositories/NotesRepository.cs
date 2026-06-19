@@ -103,24 +103,21 @@ public class NotesRepository : INotesRepository
 
     public async Task<List<Course>> GetStudentStudyPlanCoursesAsync(int studentId)
     {
-        var student = await _context.Students
-            .FirstOrDefaultAsync(s => s.StudentId == studentId);
-
-        if (student == null)
-        {
-            return new List<Course>();
-        }
-
-        var courses = await _context.StudyPlanCourses
-            .Where(spc => spc.StudyPlanId == student.StudyPlanId)
-            .Include(spc => spc.Course)
-            .Select(spc => spc.Course)
+        var courses = await _context.StudentProgress
+            .Where(sp => sp.StudentId == studentId && sp.Status == "EnCurso")
+            .Include(sp => sp.Course)
+            .Select(sp => sp.Course)
             .Where(c => c.IsStatus)
-            .Distinct()
             .OrderBy(c => c.Name)
             .ToListAsync();
 
         return courses;
+    }
+
+    public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)
+    {
+        return await _context.StudentProgress
+            .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
     }
 }
 

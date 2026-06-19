@@ -16,10 +16,14 @@ public class CalendarService : ICalendarService
         _studentRepository = studentRepository;
     }
 
+    // Tries StudentId first, falls back to UserId (same pattern as CurriculumService).
+    private async Task<Models.Entities.Student?> ResolveStudentAsync(int id)
+        => await _studentRepository.GetStudentByIdAsync(id)
+           ?? await _studentRepository.GetStudentByUserIdAsync(id);
+
     public async Task<StudentCalendarResponse?> GetStudentCalendarAsync(int studentId)
     {
-        // Validate that the student exists
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -41,8 +45,7 @@ public class CalendarService : ICalendarService
 
     public async Task<StudentCalendarResponse?> GetStudentCalendarByDateRangeAsync(int studentId, DateTime startDate, DateTime endDate)
     {
-        // Validate that the student exists
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -54,8 +57,7 @@ public class CalendarService : ICalendarService
 
     public async Task<StudentCalendarResponse?> GetStudentCalendarByActivityTypeAsync(int studentId, string activityType)
     {
-        // Validate that the student exists
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -65,14 +67,9 @@ public class CalendarService : ICalendarService
         return BuildCalendarResponse(events);
     }
 
-    /// <summary>
-    /// Creates a new calendar event for a student
-    /// Validates that the student exists and optionally validates the course if provided
-    /// </summary>
     public async Task<CalendarEventResponse?> CreateCalendarEventAsync(int studentId, CreateCalendarEventRequest request)
     {
-        // Validate that the student exists
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -108,7 +105,7 @@ public class CalendarService : ICalendarService
 
     public async Task<CalendarEventResponse?> UpdateCalendarEventAsync(int studentId, int eventId, UpdateCalendarEventRequest request)
     {
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -130,7 +127,7 @@ public class CalendarService : ICalendarService
 
     public async Task<bool?> DeleteCalendarEventAsync(int studentId, int eventId)
     {
-        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        var student = await ResolveStudentAsync(studentId);
         if (student == null)
             return null;
 
@@ -153,9 +150,9 @@ public class CalendarService : ICalendarService
             TotalEvents = events.Count,
             UpcomingEvents = events.Count(e => !e.IsCompleted && e.ActivityDate >= DateTime.Now),
             CompletedEvents = events.Count(e => e.IsCompleted),
-            ExamsCount = events.Count(e => e.ActivityType.Equals("Exam", StringComparison.OrdinalIgnoreCase)),
-            AssignmentsCount = events.Count(e => e.ActivityType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) 
-                || e.ActivityType.Equals("Project", StringComparison.OrdinalIgnoreCase))
+            ExamsCount = events.Count(e => e.ActivityType.Equals("Examen", StringComparison.OrdinalIgnoreCase)),
+            AssignmentsCount = events.Count(e => e.ActivityType.Equals("Tarea", StringComparison.OrdinalIgnoreCase)
+                || e.ActivityType.Equals("Proyecto", StringComparison.OrdinalIgnoreCase))
         };
 
         return new StudentCalendarResponse
