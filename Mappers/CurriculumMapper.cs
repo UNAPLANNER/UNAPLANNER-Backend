@@ -130,6 +130,7 @@ public class CurriculumMapper
                 RequirementType = r.RequirementType,
                 IsPassed = prereqProgressDict.TryGetValue(r.RequiredCourseId, out var rp) && rp.Status == "Aprobado"
             }).ToList(),
+            EnrolledDetailId = detail?.Id,
             ProfessorName = detail?.ProfessorName,
             Classroom = detail?.Classroom,
             Schedule = detail?.Schedule,
