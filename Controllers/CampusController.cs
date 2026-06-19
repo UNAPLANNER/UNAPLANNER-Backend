@@ -84,4 +84,41 @@ public class CampusController : ControllerBase
                 });
         }
     }
+
+    /// <summary>
+/// Creates a new campus with validation.
+/// </summary>
+/// <param name="request">Campus creation request DTO</param>
+/// <returns>Created campus details if successful.</returns>
+[HttpPost]
+[ProducesResponseType(typeof(CampusResponseDto), StatusCodes.Status201Created)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+public async Task<IActionResult> CreateCampus([FromBody] CreateCampusRequest request)
+{
+    try
+    {
+        var result = await _campusService.CreateCampusAsync(request);
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+
+        // Correct: 201 Created with success message
+        return CreatedAtAction(nameof(GetCampusById),
+            new { id = result.Campus!.Id },
+            new
+            {
+                message = "Se registro existosamente el campus",
+                campus = result.Campus
+            });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new { message = "Error creating campus", error = ex.Message });
+    }
+}
+
 }

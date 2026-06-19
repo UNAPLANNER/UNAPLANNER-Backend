@@ -27,4 +27,20 @@ public class CampusRepository : ICampusRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id);
     }
+
+    //create campus
+    public async Task<Campus> CreateCampusAsync(Campus campus)
+    {
+        _context.Campuses.Add(campus);
+        await _context.SaveChangesAsync();
+        return campus;
+    }
+
+    // Get a campus by its code (to verify uniqueness)
+    public async Task<Campus?> GetByCodeCampus(string code)
+    {
+        return await _context.Campuses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Code == code);
+    }
 }

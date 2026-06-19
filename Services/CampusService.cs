@@ -37,4 +37,21 @@ public class CampusService : ICampusService
 
         return CampusMapper.ToDto(campus);
     }
+    public async Task<(bool Success, string Error, CampusResponseDto? Campus)> CreateCampusAsync(CreateCampusRequest request)
+    {
+        var existing = await _repository.GetByCodeCampus(request.Code);
+        if (existing != null)
+        {
+            return (false, "El código ya existe", null);
+        }
+
+        var campus = CampusMapper.ToEntity(request);
+
+        var created = await _repository.CreateCampusAsync(campus);
+
+        var response = CampusMapper.ToDto(created);
+
+        return (true, string.Empty, response);
+
+    }
 }

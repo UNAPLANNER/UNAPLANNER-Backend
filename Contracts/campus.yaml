@@ -1,0 +1,171 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API
+  version: 1.0.0
+  description: |
+    API RESTful para la plataforma UNAPLANNER de control académico.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+
+paths:
+  /api/campus:
+    get:
+      tags:
+        - Campus
+      summary: Retrieves the list of registered campuses
+      description: Returns a list of campuses with name, code, and status.
+      responses:
+        '200':
+          description: List of campuses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampusResponseDto'
+        '404':
+          description: No campuses found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: No campuses found
+        '500':
+          description: Error retrieving campuses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Error retrieving campuses
+                  error:
+                    type: string
+                    example: Exception details
+
+    post:
+      tags:
+        - Campus
+      summary: Creates a new campus with validation
+      description: Validates uniqueness of the campus code and registers a new campus.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampusRequest'
+      responses:
+        '201':
+          description: Campus registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Campus registered successfully
+                  campus:
+                    $ref: '#/components/schemas/CampusResponseDto'
+        '400':
+          description: Validation error (e.g., duplicate code)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: The code already exists
+        '500':
+          description: Error creating campus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Error creating campus
+                  error:
+                    type: string
+                    example: Exception details
+
+  /api/campus/{id}:
+    get:
+      tags:
+        - Campus
+      summary: Gets a campus by its unique identifier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Campus ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Campus retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusResponseDto'
+        '404':
+          description: Campus not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Campus with ID 1 not found
+        '500':
+          description: Error retrieving campus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Error retrieving campus
+                  error:
+                    type: string
+                    example: Exception details
+
+components:
+  schemas:
+    CreateCampusRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Main Campus
+        code:
+          type: string
+          example: MC001
+    CampusResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Main Campus
+        code:
+          type: string
+          example: MC001
+        isStatus:
+          type: boolean
+          example: true
+        createdDate:
+          type: string
+          format: date-time
+          example: 2026-06-18T18:54:00Z

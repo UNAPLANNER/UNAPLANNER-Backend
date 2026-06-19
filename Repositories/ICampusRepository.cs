@@ -9,4 +9,11 @@ public interface ICampusRepository
 
     // Retrieves a campus by its unique identifier.
     Task<Campus?> GetByIdCampus(int id);
+
+    // Retrieves a campus by its code (for uniqueness validation)
+    Task<Campus?> GetByCodeCampus(string code);
+
+    // Adds a new campus to the database
+     Task<Campus> CreateCampusAsync(Campus campus);
+  
 }

@@ -1,4 +1,5 @@
 using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.DTOs.Requests;
 
 namespace UNAPLANNER_API.Services;
 
@@ -10,4 +11,7 @@ public interface ICampusService
 
     // Retrieves a campus by its ID and returns it as a DTO.
     Task<CampusResponseDto?> GetCampusByIdAsync(int id);
+
+    // Creates a new campus with validation
+    Task<(bool Success, string Error, CampusResponseDto? Campus)> CreateCampusAsync(CreateCampusRequest request);
 }
