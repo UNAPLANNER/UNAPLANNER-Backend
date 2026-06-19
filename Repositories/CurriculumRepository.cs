@@ -88,4 +88,26 @@ public class CurriculumRepository : ICurriculumRepository
             .ThenBy(spc => spc.Course.Name)
             .ToListAsync();
     }
+
+    public async Task<StudyPlanCourse?> GetStudyPlanCourseAsync(int studyPlanId, int courseId)
+    {
+        return await _context.StudyPlanCourses
+            .Include(spc => spc.Course)
+            .FirstOrDefaultAsync(spc => spc.StudyPlanId == studyPlanId && spc.CourseId == courseId && spc.IsStatus);
+    }
+
+    public async Task<StudentProgress?> GetStudentProgressWithDetailAsync(int studentId, int courseId)
+    {
+        return await _context.StudentProgress
+            .Include(sp => sp.StudentCourseDetail)
+            .FirstOrDefaultAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId);
+    }
+
+    public async Task<List<Requirement>> GetCoursePrerequisitesAsync(int courseId)
+    {
+        return await _context.Requirements
+            .Include(r => r.RequiredCourse)
+            .Where(r => r.CourseId == courseId)
+            .ToListAsync();
+    }
 }
