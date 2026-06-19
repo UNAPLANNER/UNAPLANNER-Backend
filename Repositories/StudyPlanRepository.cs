@@ -43,6 +43,70 @@ public class StudyPlanRepository : IStudyPlanRepository
         _context.StudyPlans.Add(studyPlan);
         await _context.SaveChangesAsync();
 
+        return await GetRequiredDetailAsync(studyPlan.StudyPlanId);
+    }
+
+    public async Task<bool> CourseCodeExistsAsync(string code)
+    {
+        return await _context.Courses
+            .AsNoTracking()
+            .AnyAsync(course => course.Code.ToLower() == code.ToLower());
+    }
+
+    public async Task<bool> StudyPlanExistsAsync(int studyPlanId)
+    {
+        return await _context.StudyPlans
+            .AsNoTracking()
+            .AnyAsync(studyPlan => studyPlan.StudyPlanId == studyPlanId && studyPlan.IsStatus);
+    }
+
+    public async Task<bool> StudyPlanContainsCoursesAsync(int studyPlanId, List<int> courseIds)
+    {
+        if (courseIds.Count == 0)
+            return true;
+
+        var distinctCourseIds = courseIds.Distinct().ToList();
+        var matchingCourseCount = await _context.StudyPlanCourses
+            .AsNoTracking()
+            .Where(planCourse =>
+                planCourse.StudyPlanId == studyPlanId &&
+                planCourse.IsStatus &&
+                distinctCourseIds.Contains(planCourse.CourseId))
+            .Select(planCourse => planCourse.CourseId)
+            .Distinct()
+            .CountAsync();
+
+        return matchingCourseCount == distinctCourseIds.Count;
+    }
+
+    public async Task<StudyPlan> CreateCourseAsync(
+        int studyPlanId,
+        Course course,
+        StudyPlanCourse studyPlanCourse,
+        List<Requirement> requirements)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        _context.Courses.Add(course);
+        await _context.SaveChangesAsync();
+
+        studyPlanCourse.CourseId = course.Id;
+        _context.StudyPlanCourses.Add(studyPlanCourse);
+
+        foreach (var requirement in requirements)
+        {
+            requirement.CourseId = course.Id;
+            _context.Requirements.Add(requirement);
+        }
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return await GetRequiredDetailAsync(studyPlanId);
+    }
+
+    private async Task<StudyPlan> GetRequiredDetailAsync(int studyPlanId)
+    {
         return await _context.StudyPlans
             .AsNoTracking()
             .Include(plan => plan.Career)
@@ -50,6 +114,6 @@ public class StudyPlanRepository : IStudyPlanRepository
                 .ThenInclude(planCourse => planCourse.Course)
                     .ThenInclude(course => course.CourseRequirements)
                         .ThenInclude(requirement => requirement.RequiredCourse)
-            .FirstAsync(plan => plan.StudyPlanId == studyPlan.StudyPlanId);
+            .FirstAsync(plan => plan.StudyPlanId == studyPlanId);
     }
 }

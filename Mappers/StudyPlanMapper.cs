@@ -88,6 +88,9 @@ public static class StudyPlanMapper
             Code = planCourse.Course.Code,
             Name = planCourse.Course.Name,
             Credits = planCourse.Course.Credits,
+            TheoryHours = planCourse.Course.TheoryHours,
+            PracticeHours = planCourse.Course.PracticeHours,
+            LabHours = planCourse.Course.LabHours,
             IsElective = planCourse.IsElective,
             ElectiveType = planCourse.ElectiveType,
             Prerequisites = planCourse.Course.CourseRequirements
