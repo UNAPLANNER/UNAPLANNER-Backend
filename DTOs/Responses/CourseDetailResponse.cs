@@ -20,6 +20,7 @@ public class CourseDetailResponse
     public List<PrerequisiteResponse> Prerequisites { get; set; } = new();
 
     // Only populated when Status is EnCurso or Aprobado
+    public int? EnrolledDetailId { get; set; }
     public string? ProfessorName { get; set; }
     public string? Classroom { get; set; }
     public string? Schedule { get; set; }
