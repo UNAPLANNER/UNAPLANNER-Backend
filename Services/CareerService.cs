@@ -11,15 +11,18 @@ public class CareerService : ICareerService
     private readonly ICareerRepository _careerRepository;
     private readonly ICurriculumRepository _curriculumRepository;
     private readonly IProfileRepository _profileRepository;
+    private readonly IStudyPlanService _studyPlanService;
 
     public CareerService(
         ICareerRepository careerRepository,
         ICurriculumRepository curriculumRepository,
-        IProfileRepository profileRepository)
+        IProfileRepository profileRepository,
+        IStudyPlanService studyPlanService)
     {
         _careerRepository = careerRepository;
         _curriculumRepository = curriculumRepository;
         _profileRepository = profileRepository;
+        _studyPlanService = studyPlanService;
     }
 
     public async Task<List<CareerResponse>> GetAllCareersAsync()
@@ -113,12 +116,38 @@ public class CareerService : ICareerService
         };
 
         var created = await _careerRepository.CreateAsync(career);
-        return CareerMapper.ToResponse(created);
+        await _studyPlanService.CreateStudyPlanAsync(new CreateStudyPlanRequest
+        {
+            CareerId = created.Id,
+            Name = BuildStudyPlanName(request.DegreeLevel, name),
+            Code = BuildStudyPlanCode(request.DegreeLevel, code, request.PlanYear),
+            ValidYear = request.PlanYear,
+            IsStatus = request.IsStatus
+        });
+
+        var createdWithStudyPlan = await _careerRepository.GetEditableByIdAsync(created.Id);
+        return CareerMapper.ToResponse(createdWithStudyPlan ?? created);
     }
 
     private static string NormalizeCareerCode(string officialResolution)
     {
         return officialResolution.Trim().ToUpperInvariant();
+    }
+
+    private static string BuildStudyPlanName(string degreeLevel, string careerName)
+    {
+        return $"{degreeLevel.Trim()} en {careerName.Trim()}";
+    }
+
+    private static string BuildStudyPlanCode(string degreeLevel, string careerCode, int planYear)
+    {
+        var degreePrefix = degreeLevel.Trim()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => word[0])
+            .Aggregate(string.Empty, (current, letter) => current + letter)
+            .ToUpperInvariant();
+
+        return $"{degreePrefix}-{careerCode.Trim().ToUpperInvariant()}-{planYear}";
     }
 
     private static int GetCareerTotalCredits(
