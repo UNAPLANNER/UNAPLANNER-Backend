@@ -53,17 +53,27 @@ public class FirebaseNotificationSender : INotificationSender
         return successCount;
     }
 
-    private static Message BuildMessage(string token, NotificationPayload payload) =>
-        new()
+    private static Message BuildMessage(string token, NotificationPayload payload)
+    {
+        // Data-only (no Notification field) so onMessageReceived is ALWAYS called
+        // regardless of whether the app is open, backgrounded, or killed.
+        // The Android app handles both the device notification and the bell from here.
+        var data = new Dictionary<string, string>(payload.Data)
+        {
+            ["title"] = payload.Title,
+            ["body"]  = payload.Body
+        };
+
+        return new Message
         {
             Token = token,
-            Notification = new Notification
+            Data  = data,
+            Android = new AndroidConfig
             {
-                Title = payload.Title,
-                Body = payload.Body
-            },
-            Data = payload.Data
+                Priority = Priority.High  // Wake device from Doze for timely delivery
+            }
         };
+    }
 
 // This method attempts to initialize the Firebase Admin SDK, logging any issues encountered during the process.
     private void TryInitializeFirebase(IConfiguration configuration, IHostEnvironment environment)

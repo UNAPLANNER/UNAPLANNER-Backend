@@ -62,6 +62,20 @@ public class NotificationService : INotificationService
         return await _notificationRepository.MarkAllAsReadAsync(userId);
     }
 
+    public async Task<bool> DeleteNotificationAsync(int userId, int notificationId)
+    {
+        var notification = await _notificationRepository.GetByIdAsync(notificationId);
+        if (notification is null || notification.UserId != userId)
+            return false;
+
+        return await _notificationRepository.DeleteAsync(notificationId);
+    }
+
+    public async Task<bool> DeleteAllNotificationsAsync(int userId)
+    {
+        return await _notificationRepository.DeleteAllAsync(userId);
+    }
+
     public async Task SendActivityReminderAsync(
         int userId, int calendarId, string activityTitle, string activityType, DateTime activityDate)
     {

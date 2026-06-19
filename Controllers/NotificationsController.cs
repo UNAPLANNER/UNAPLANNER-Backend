@@ -119,4 +119,49 @@ public class NotificationsController : ControllerBase
                 new { message = "Error al marcar las notificaciones como leídas", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Deletes a specific notification belonging to the user.
+    /// </summary>
+    [HttpDelete("{notificationId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteNotification(int userId, int notificationId)
+    {
+        try
+        {
+            var result = await _notificationService.DeleteNotificationAsync(userId, notificationId);
+
+            if (!result)
+                return NotFound(new { message = $"Notificación {notificationId} no encontrada para el usuario {userId}" });
+
+            return Ok(new { message = "Notificación eliminada correctamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar la notificación", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Deletes all notifications for the user.
+    /// </summary>
+    [HttpDelete]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteAllNotifications(int userId)
+    {
+        try
+        {
+            await _notificationService.DeleteAllNotificationsAsync(userId);
+            return Ok(new { message = "Todas las notificaciones eliminadas correctamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar las notificaciones", error = ex.Message });
+        }
+    }
 }

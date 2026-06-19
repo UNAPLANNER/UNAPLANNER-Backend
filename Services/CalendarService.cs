@@ -142,6 +142,18 @@ public class CalendarService : ICalendarService
 
         CalendarMapper.ApplyUpdate(calendarEvent, request);
         var updatedEvent = await _calendarRepository.UpdateAsync(calendarEvent);
+
+        if (updatedEvent.HasReminder)
+        {
+            var reminderDate = updatedEvent.ReminderDate ?? updatedEvent.ActivityDate;
+            await _notificationService.SendActivityReminderAsync(
+                student.UserId,
+                updatedEvent.Id,
+                updatedEvent.Title,
+                updatedEvent.ActivityType,
+                reminderDate);
+        }
+
         return CalendarMapper.ToCalendarEventResponse(updatedEvent);
     }
 // This method deletes a calendar event for a student, validating that the student and event exist, ensuring the event belongs to the student, and then deleting the event from the database, returning true if the deletion was successful, false if the event was not found or did not belong to the student, and null if the student does not exist.
