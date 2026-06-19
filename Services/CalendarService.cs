@@ -106,6 +106,41 @@ public class CalendarService : ICalendarService
         }
     }
 
+    public async Task<CalendarEventResponse?> UpdateCalendarEventAsync(int studentId, int eventId, UpdateCalendarEventRequest request)
+    {
+        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        if (student == null)
+            return null;
+
+        var calendarEvent = await _calendarRepository.GetByIdAsync(eventId);
+        if (calendarEvent == null || calendarEvent.UserId != student.UserId)
+            throw new KeyNotFoundException($"Evento del calendario con ID {eventId} no encontrado");
+
+        if (request.CourseId.HasValue && request.CourseId > 0)
+        {
+            var courseExists = await _calendarRepository.CourseExistsAsync(request.CourseId.Value);
+            if (!courseExists)
+                throw new InvalidOperationException($"El curso con ID {request.CourseId} no existe");
+        }
+
+        CalendarMapper.ApplyUpdate(calendarEvent, request);
+        var updatedEvent = await _calendarRepository.UpdateAsync(calendarEvent);
+        return CalendarMapper.ToCalendarEventResponse(updatedEvent);
+    }
+
+    public async Task<bool?> DeleteCalendarEventAsync(int studentId, int eventId)
+    {
+        var student = await _studentRepository.GetStudentByIdAsync(studentId);
+        if (student == null)
+            return null;
+
+        var calendarEvent = await _calendarRepository.GetByIdAsync(eventId);
+        if (calendarEvent == null || calendarEvent.UserId != student.UserId)
+            return false;
+
+        return await _calendarRepository.DeleteAsync(eventId);
+    }
+
     /// <summary>
     /// Builds a StudentCalendarResponse with events and summary statistics
     /// </summary>
