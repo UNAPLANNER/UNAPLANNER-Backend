@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using UNAPLANNER_API.Data;
+using UNAPLANNER_API.Infrastructure.Firebase;
 using UNAPLANNER_API.Repositories;
 using UNAPLANNER_API.Services;
 using UNAPLANNER_API.Constants;
@@ -44,6 +45,12 @@ builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
 builder.Services.AddScoped<ICareerService, CareerService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
