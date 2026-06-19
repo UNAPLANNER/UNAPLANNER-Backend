@@ -48,14 +48,26 @@ public class CareerService : ICareerService
         if (career == null || career.CampusId != admin.CampusId)
             throw new KeyNotFoundException("No se encontro la carrera solicitada.");
 
-        var normalizedCode = request.Code.Trim().ToUpperInvariant();
+        var normalizedCode = NormalizeCareerCode(request.OfficialResolution);
         if (await _careerRepository.ExistsByCodeExcludingIdAsync(careerId, normalizedCode))
             throw new InvalidOperationException("Ya existe una carrera con ese codigo.");
 
+        var totalCredits = GetCareerTotalCredits(
+            request.DegreeLevel,
+            request.BachelorCredits,
+            request.DiplomaCredits,
+            request.DegreeCredits);
+
         career.Name = request.Name.Trim();
         career.Code = normalizedCode;
-        career.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
-        career.TotalCredits = request.TotalCredits;
+        career.Description = BuildAdminCareerDescription(
+            request.DegreeLevel,
+            request.PlanYear,
+            request.School,
+            totalCredits,
+            request.DiplomaCredits,
+            request.OfficialResolution);
+        career.TotalCredits = totalCredits;
         career.IsStatus = request.IsStatus;
 
         var updated = await _careerRepository.UpdateAsync(career);
@@ -69,8 +81,19 @@ public class CareerService : ICareerService
             throw new KeyNotFoundException("No se encontro el perfil administrativo del usuario autenticado.");
 
         var name = request.Name.Trim();
-        var code = request.Code.Trim().ToUpperInvariant();
-        var description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        var code = NormalizeCareerCode(request.OfficialResolution);
+        var totalCredits = GetCareerTotalCredits(
+            request.DegreeLevel,
+            request.BachelorCredits,
+            request.DiplomaCredits,
+            request.DegreeCredits);
+        var description = BuildAdminCareerDescription(
+            request.DegreeLevel,
+            request.PlanYear,
+            request.School,
+            totalCredits,
+            request.DiplomaCredits,
+            request.OfficialResolution);
 
         if (await _careerRepository.ExistsByNameAsync(admin.CampusId, name))
             throw new InvalidOperationException("Ya existe una carrera con ese nombre en este campus.");
@@ -84,13 +107,69 @@ public class CareerService : ICareerService
             Name = name,
             Code = code,
             Description = description,
-            TotalCredits = request.TotalCredits,
+            TotalCredits = totalCredits,
             IsStatus = request.IsStatus,
             CreatedDate = DateTime.Now
         };
 
         var created = await _careerRepository.CreateAsync(career);
         return CareerMapper.ToResponse(created);
+    }
+
+    private static string NormalizeCareerCode(string officialResolution)
+    {
+        return officialResolution.Trim().ToUpperInvariant();
+    }
+
+    private static int GetCareerTotalCredits(
+        string degreeLevel,
+        int? bachelorCredits,
+        int? diplomaCredits,
+        int? degreeCredits)
+    {
+        if (RequiresSpecificDegreeCredits(degreeLevel))
+        {
+            return degreeCredits
+                ?? throw new InvalidOperationException($"Los creditos de {degreeLevel.Trim().ToLowerInvariant()} son obligatorios.");
+        }
+
+        if (!diplomaCredits.HasValue)
+            throw new InvalidOperationException("Los creditos de diplomado son obligatorios.");
+
+        return bachelorCredits
+            ?? throw new InvalidOperationException("Los creditos de bachillerato son obligatorios.");
+    }
+
+    private static string BuildAdminCareerDescription(
+        string degreeLevel,
+        int planYear,
+        string school,
+        int totalCredits,
+        int? diplomaCredits,
+        string officialResolution)
+    {
+        var normalizedDegree = degreeLevel.Trim();
+        var creditsDescription = RequiresSpecificDegreeCredits(normalizedDegree)
+            ? $"Creditos {normalizedDegree.ToLowerInvariant()}: {totalCredits}"
+            : $"Creditos diplomado: {diplomaCredits}";
+
+        return string.Join(" | ", new[]
+        {
+            $"Grado: {normalizedDegree}",
+            $"Anio del plan: {planYear}",
+            $"Escuela: {school.Trim()}",
+            creditsDescription,
+            $"Resolucion oficial: {officialResolution.Trim().ToUpperInvariant()}"
+        });
+    }
+
+    private static bool RequiresSpecificDegreeCredits(string degreeLevel)
+    {
+        var normalizedDegree = degreeLevel.Trim();
+        return normalizedDegree.Equals("Licenciatura", StringComparison.OrdinalIgnoreCase)
+            || normalizedDegree.Equals("Maestria", StringComparison.OrdinalIgnoreCase)
+            || normalizedDegree.Equals("Maestría", StringComparison.OrdinalIgnoreCase)
+            || normalizedDegree.Equals("Doctorado", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<List<LevelCurriculumResponse>> GetCurriculumByCareerIdAsync(int careerId, int? userId = null)
