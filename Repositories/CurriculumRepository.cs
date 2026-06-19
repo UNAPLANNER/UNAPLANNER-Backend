@@ -110,4 +110,39 @@ public class CurriculumRepository : ICurriculumRepository
             .Where(r => r.CourseId == courseId)
             .ToListAsync();
     }
+
+    public async Task<StudentCourseDetail> CreateCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl)
+    {
+        var detail = new StudentCourseDetail
+        {
+            StudentProgressId = studentProgressId,
+            ProfessorName = professorName,
+            Classroom = classroom,
+            Schedule = schedule,
+            SyllabusUrl = syllabusUrl
+        };
+        _context.StudentCourseDetails.Add(detail);
+        await _context.SaveChangesAsync();
+        return detail;
+    }
+
+    public async Task<StudentCourseDetail> UpsertCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl)
+    {
+        var existing = await _context.StudentCourseDetails
+            .FirstOrDefaultAsync(d => d.StudentProgressId == studentProgressId);
+
+        if (existing == null)
+        {
+            existing = new StudentCourseDetail { StudentProgressId = studentProgressId };
+            _context.StudentCourseDetails.Add(existing);
+        }
+
+        existing.ProfessorName = professorName;
+        existing.Classroom = classroom;
+        existing.Schedule = schedule;
+        existing.SyllabusUrl = syllabusUrl;
+
+        await _context.SaveChangesAsync();
+        return existing;
+    }
 }

@@ -109,6 +109,87 @@ public class CurriculumService : ICurriculumService
         }
     }
 
+    public async Task<(bool Success, bool IsConflict, bool IsBadRequest, CourseDetailResponse? Detail, string? ErrorMessage)> CreateEnrolledDetailAsync(
+        int studentId, int courseId, EnrolledCourseDetailRequest request)
+    {
+        try
+        {
+            var student = await _curriculumRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+                return (false, false, false, null, $"Estudiante con ID {studentId} no encontrado.");
+
+            var spc = await _curriculumRepository.GetStudyPlanCourseAsync(student.StudyPlanId, courseId);
+            if (spc == null)
+                return (false, false, false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
+
+            var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(studentId, courseId);
+            if (progress?.Status != "EnCurso")
+                return (false, false, true, null, "Solo se pueden registrar detalles para cursos con estado 'EnCurso'.");
+
+            if (progress.StudentCourseDetail != null)
+                return (false, true, false, null, "Ya existe un detalle de matrícula para este curso. Use PUT para actualizarlo.");
+
+            var detail = await _curriculumRepository.CreateCourseDetailAsync(
+                progress.StudentProgressId, request.ProfessorName, request.Classroom, request.Schedule, request.SyllabusUrl);
+
+            progress.StudentCourseDetail = detail;
+
+            var prerequisites = await _curriculumRepository.GetCoursePrerequisitesAsync(courseId);
+            var prereqProgressDict = await BuildPrereqProgressDict(studentId, prerequisites);
+
+            var response = CurriculumMapper.ToCourseDetailResponse(spc, progress, prerequisites, prereqProgressDict);
+            return (true, false, false, response, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, false, false, null, $"Error al crear el detalle del curso: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, bool IsBadRequest, CourseDetailResponse? Detail, string? ErrorMessage)> UpdateEnrolledDetailAsync(
+        int studentId, int courseId, EnrolledCourseDetailRequest request)
+    {
+        try
+        {
+            var student = await _curriculumRepository.GetStudentByIdAsync(studentId);
+            if (student == null)
+                return (false, false, null, $"Estudiante con ID {studentId} no encontrado.");
+
+            var spc = await _curriculumRepository.GetStudyPlanCourseAsync(student.StudyPlanId, courseId);
+            if (spc == null)
+                return (false, false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
+
+            var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(studentId, courseId);
+            if (progress?.Status != "EnCurso")
+                return (false, true, null, "Solo se pueden actualizar detalles para cursos con estado 'EnCurso'.");
+
+            var detail = await _curriculumRepository.UpsertCourseDetailAsync(
+                progress.StudentProgressId, request.ProfessorName, request.Classroom, request.Schedule, request.SyllabusUrl);
+
+            progress.StudentCourseDetail = detail;
+
+            var prerequisites = await _curriculumRepository.GetCoursePrerequisitesAsync(courseId);
+            var prereqProgressDict = await BuildPrereqProgressDict(studentId, prerequisites);
+
+            var response = CurriculumMapper.ToCourseDetailResponse(spc, progress, prerequisites, prereqProgressDict);
+            return (true, false, response, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, false, null, $"Error al actualizar el detalle del curso: {ex.Message}");
+        }
+    }
+
+    private async Task<Dictionary<int, StudentProgress>> BuildPrereqProgressDict(int studentId, List<Requirement> prerequisites)
+    {
+        if (prerequisites.Count == 0)
+            return new Dictionary<int, StudentProgress>();
+
+        var allProgress = await _curriculumRepository.GetStudentProgressAsync(studentId);
+        var prereqIds = prerequisites.Select(r => r.RequiredCourseId).ToHashSet();
+        return allProgress.Where(p => prereqIds.Contains(p.CourseId)).ToDictionary(p => p.CourseId);
+    }
+
     public async Task<(bool Success, CourseDetailResponse? Detail, string? ErrorMessage)> GetCourseDetailAsync(int studentId, int courseId)
     {
         try
@@ -123,16 +204,7 @@ public class CurriculumService : ICurriculumService
 
             var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(studentId, courseId);
             var prerequisites = await _curriculumRepository.GetCoursePrerequisitesAsync(courseId);
-
-            Dictionary<int, StudentProgress> prereqProgressDict = new();
-            if (prerequisites.Count > 0)
-            {
-                var allProgress = await _curriculumRepository.GetStudentProgressAsync(studentId);
-                var prereqIds = prerequisites.Select(r => r.RequiredCourseId).ToHashSet();
-                prereqProgressDict = allProgress
-                    .Where(p => prereqIds.Contains(p.CourseId))
-                    .ToDictionary(p => p.CourseId);
-            }
+            var prereqProgressDict = await BuildPrereqProgressDict(studentId, prerequisites);
 
             var detail = CurriculumMapper.ToCourseDetailResponse(spc, progress, prerequisites, prereqProgressDict);
             return (true, detail, null);
