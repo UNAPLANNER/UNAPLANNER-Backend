@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
@@ -5,6 +7,7 @@ using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
 
+[Authorize]
 [Route("api/student")]
 [ApiController]
 public class StudentCurriculumController : ControllerBase
@@ -16,6 +19,12 @@ public class StudentCurriculumController : ControllerBase
     {
         _curriculumService = curriculumService;
         _logger = logger;
+    }
+
+    private bool IsCurrentStudent(int studentId)
+    {
+        var claim = User.FindFirstValue("StudentId");
+        return int.TryParse(claim, out var id) && id == studentId;
     }
 
     /// <summary>
@@ -30,6 +39,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetStudentCurriculum(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetStudentCurriculumAsync(id);
@@ -57,6 +67,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetStudentCurriculumCourses(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetStudentCoursesWithProgressAsync(id);
@@ -85,6 +96,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetCourseDetail(int id, int courseId)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetCourseDetailAsync(id, courseId);
@@ -102,6 +114,79 @@ public class StudentCurriculumController : ControllerBase
     }
 
     /// <summary>
+    /// Creates the enrolled detail (professor, classroom, schedule, syllabus) for an in-progress course.
+    /// Fails with 409 if a detail record already exists; use PUT to update it.
+    /// </summary>
+    [HttpPost("{id}/courses/{courseId}/enrolled-detail")]
+    [ProducesResponseType(typeof(CourseDetailResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateEnrolledDetail(int id, int courseId, [FromBody] EnrolledCourseDetailRequest request)
+    {
+        if (!IsCurrentStudent(id)) return Forbid();
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var result = await _curriculumService.CreateEnrolledDetailAsync(id, courseId, request);
+
+            if (!result.Success)
+            {
+                if (result.IsConflict)
+                    return Conflict(new { message = result.ErrorMessage });
+                if (result.IsBadRequest)
+                    return BadRequest(new { message = result.ErrorMessage });
+                return NotFound(new { message = result.ErrorMessage });
+            }
+
+            return StatusCode(StatusCodes.Status201Created, result.Detail);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al crear el detalle del curso", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Creates or updates the enrolled detail (professor, classroom, schedule, syllabus) for an in-progress course.
+    /// Passing null values clears the corresponding field.
+    /// </summary>
+    [HttpPut("{id}/courses/{courseId}/enrolled-detail")]
+    [ProducesResponseType(typeof(CourseDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateEnrolledDetail(int id, int courseId, [FromBody] EnrolledCourseDetailRequest request)
+    {
+        if (!IsCurrentStudent(id)) return Forbid();
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var result = await _curriculumService.UpdateEnrolledDetailAsync(id, courseId, request);
+
+            if (!result.Success)
+            {
+                if (result.IsBadRequest)
+                    return BadRequest(new { message = result.ErrorMessage });
+                return NotFound(new { message = result.ErrorMessage });
+            }
+
+            return Ok(result.Detail);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al actualizar el detalle del curso", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Updates the status of a course in the student's curriculum.
     /// Creates a progress record if it doesn't exist.
     /// </summary>
@@ -115,6 +200,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateCourseStatus(int id, int courseId, [FromBody] UpdateCourseStatusRequest request)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("PUT student/{Id}/courses/{CourseId} — validación fallida: {Errors}",

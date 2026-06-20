@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
@@ -39,6 +40,48 @@ public class AuthController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns the current authenticated user's data decoded from the JWT.
+    /// The frontend must call this after every login to get the authoritative session data.
+    /// </summary>
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized();
+
+        var response = new AuthResponse
+        {
+            UserId = userId,
+            Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
+            Role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty
+        };
+
+        if (int.TryParse(User.FindFirstValue("StudentId"), out var studentId))
+        {
+            response.StudentId = studentId;
+
+            if (int.TryParse(User.FindFirstValue("CareerId"), out var careerId))
+                response.CareerId = careerId;
+
+            if (int.TryParse(User.FindFirstValue("StudyPlanId"), out var studyPlanId))
+                response.StudyPlanId = studyPlanId;
+        }
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Signals logout. The client must delete the token and clear all local session state.
+    /// </summary>
+    [Authorize]
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        return Ok(new { message = "Sesión cerrada. Elimine el token del dispositivo." });
     }
 
     [AllowAnonymous]

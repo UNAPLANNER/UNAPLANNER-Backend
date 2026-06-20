@@ -65,6 +65,16 @@ public class NotesService : INotesService
                 return (false, null, "El título de la nota es requerido.");
             }
 
+            // Si se asocia a un curso, validar que esté EnCurso para este estudiante
+            if (request.CourseId.HasValue)
+            {
+                var isEnCurso = await _notesRepository.IsStudentCourseEnCursoAsync(studentId, request.CourseId.Value);
+                if (!isEnCurso)
+                {
+                    return (false, null, "Solo puedes agregar notas a cursos que están en curso actualmente.");
+                }
+            }
+
             // Crear la nota asociada al usuario del estudiante
             var note = new Note
             {
@@ -104,7 +114,7 @@ public class NotesService : INotesService
         }
     }
 
-    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, UpdateNoteRequest request)
+    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, int userId, UpdateNoteRequest request)
     {
         try
         {
@@ -113,6 +123,12 @@ public class NotesService : INotesService
             if (note == null)
             {
                 return (false, null, $"Nota con ID {noteId} no encontrada.");
+            }
+
+            // Validar propiedad de la nota
+            if (note.UserId != userId)
+            {
+                return (false, null, "No tienes permisos para modificar esta nota.");
             }
 
             // Validar que el título no esté vacío
