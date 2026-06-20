@@ -8,6 +8,13 @@ namespace UNAPLANNER_API.Services;
 
 public class StudyPlanService : IStudyPlanService
 {
+    private static readonly HashSet<string> ValidElectiveTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Obligatorio",
+        "OptativoDisciplinario",
+        "OptativoLibre"
+    };
+
     private readonly IStudyPlanRepository _studyPlanRepository;
 
     public StudyPlanService(IStudyPlanRepository studyPlanRepository)
@@ -56,5 +63,90 @@ public class StudyPlanService : IStudyPlanService
 
         var created = await _studyPlanRepository.CreateAsync(studyPlan);
         return StudyPlanMapper.ToDetailResponse(created);
+    }
+
+    public async Task<StudyPlanDetailResponse> CreateStudyPlanCourseAsync(
+        int studyPlanId,
+        CreateStudyPlanCourseRequest request)
+    {
+        if (!await _studyPlanRepository.StudyPlanExistsAsync(studyPlanId))
+            throw new KeyNotFoundException("No se encontro el plan de estudios solicitado.");
+
+        var code = request.Code.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("El codigo del curso es obligatorio.", nameof(request.Code));
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ArgumentException("El nombre del curso es obligatorio.", nameof(request.Name));
+
+        if (await _studyPlanRepository.CourseCodeExistsAsync(code))
+            throw new InvalidOperationException("Ya existe un curso con ese codigo.");
+
+        var electiveType = NormalizeElectiveType(request.ElectiveType, request.IsElective);
+        var prerequisiteCourseIds = request.PrerequisiteCourseIds
+            .Where(courseId => courseId > 0)
+            .Distinct()
+            .ToList();
+
+        if (!await _studyPlanRepository.StudyPlanContainsCoursesAsync(studyPlanId, prerequisiteCourseIds))
+            throw new ArgumentException("Los requisitos deben pertenecer al mismo plan de estudios.", nameof(request.PrerequisiteCourseIds));
+
+        var course = new Course
+        {
+            Code = code,
+            Name = request.Name.Trim(),
+            Credits = request.Credits,
+            TheoryHours = request.TheoryHours,
+            PracticeHours = request.PracticeHours,
+            LabHours = request.LabHours,
+            IsStatus = request.IsStatus,
+            CreatedDate = DateTime.Now
+        };
+
+        var studyPlanCourse = new StudyPlanCourse
+        {
+            StudyPlanId = studyPlanId,
+            Levels = request.Level,
+            Term = request.Term,
+            IsElective = request.IsElective,
+            ElectiveType = electiveType,
+            IsStatus = request.IsStatus,
+            CreatedDate = DateTime.Now
+        };
+
+        var requirements = prerequisiteCourseIds
+            .Select(requiredCourseId => new Requirement
+            {
+                RequiredCourseId = requiredCourseId,
+                RequirementType = "Prerequisite",
+                CreatedDate = DateTime.Now
+            })
+            .ToList();
+
+        var updatedStudyPlan = await _studyPlanRepository.CreateCourseAsync(
+            studyPlanId,
+            course,
+            studyPlanCourse,
+            requirements);
+
+        return StudyPlanMapper.ToDetailResponse(updatedStudyPlan);
+    }
+
+    private static string NormalizeElectiveType(string electiveType, bool isElective)
+    {
+        var normalizedElectiveType = string.IsNullOrWhiteSpace(electiveType)
+            ? "Obligatorio"
+            : electiveType.Trim();
+
+        if (!ValidElectiveTypes.Contains(normalizedElectiveType))
+            throw new ArgumentException("El tipo de curso no es valido.", nameof(electiveType));
+
+        if (!isElective && !normalizedElectiveType.Equals("Obligatorio", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Un curso obligatorio debe usar el tipo Obligatorio.", nameof(electiveType));
+
+        if (isElective && normalizedElectiveType.Equals("Obligatorio", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Un curso optativo debe usar un tipo optativo.", nameof(electiveType));
+
+        return normalizedElectiveType;
     }
 }
