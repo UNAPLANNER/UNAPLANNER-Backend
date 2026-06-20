@@ -11,6 +11,164 @@ info:
     Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
 
 paths:
+  /api/student/{id}/courses/{courseId}/enrolled-detail:
+    post:
+      tags:
+        - Student Curriculum
+      summary: Crear detalle de matrícula de un curso en curso
+      description: |
+        Registra el profesor, aula, horario y sílabo de un curso que el estudiante tiene en estado `EnCurso`.
+        Retorna `409 Conflict` si ya existe un registro; en ese caso usar `PUT` para actualizarlo.
+      operationId: createEnrolledDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolledCourseDetailRequest'
+            example:
+              professorName: "Dr. Carlos Mora"
+              classroom: "Aula 3B"
+              schedule: "Lunes y Miércoles 10:00-11:50"
+              syllabusUrl: "https://storage.example.com/silabus/mat102-2026.pdf"
+      responses:
+        "201":
+          description: Detalle de matrícula creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+        "400":
+          description: El curso no tiene estado 'EnCurso'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Solo se pueden registrar detalles para cursos con estado 'EnCurso'."
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "409":
+          description: Ya existe un detalle de matrícula para este curso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Ya existe un detalle de matrícula para este curso. Use PUT para actualizarlo."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Student Curriculum
+      summary: Actualizar (o crear) detalle de matrícula de un curso en curso
+      description: |
+        Actualiza el profesor, aula, horario y sílabo de un curso en estado `EnCurso`.
+        Si no existe el registro lo crea (upsert). Enviar `null` en un campo lo borra.
+      operationId: updateEnrolledDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolledCourseDetailRequest'
+            examples:
+              actualizar_datos:
+                summary: Actualizar todos los campos
+                value:
+                  professorName: "Msc. Laura Vargas"
+                  classroom: "Aula 5C"
+                  schedule: "Martes y Jueves 14:00-15:50"
+                  syllabusUrl: null
+              limpiar_datos:
+                summary: Borrar todos los campos
+                value:
+                  professorName: null
+                  classroom: null
+                  schedule: null
+                  syllabusUrl: null
+      responses:
+        "200":
+          description: Detalle de matrícula actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+        "400":
+          description: El curso no tiene estado 'EnCurso'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Solo se pueden actualizar detalles para cursos con estado 'EnCurso'."
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/student/{id}/courses/{courseId}/detail:
     get:
       tags:
@@ -249,6 +407,11 @@ components:
           description: Lista de prerrequisitos y corequisitos del curso
           items:
             $ref: '#/components/schemas/PrerequisiteResponse'
+        enrolledDetailId:
+          type: integer
+          nullable: true
+          description: ID del registro de detalle de matrícula, null si no existe
+          example: 7
         professorName:
           type: string
           nullable: true
@@ -296,6 +459,34 @@ components:
           type: boolean
           description: Indica si el estudiante ya aprobó este prerrequisito
           example: true
+
+    EnrolledCourseDetailRequest:
+      type: object
+      properties:
+        professorName:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Nombre del profesor
+          example: "Dr. Carlos Mora"
+        classroom:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Aula asignada
+          example: "Aula 3B"
+        schedule:
+          type: string
+          nullable: true
+          maxLength: 300
+          description: Horario de clases
+          example: "Lunes y Miércoles 10:00-11:50"
+        syllabusUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: URL del sílabo (PDF)
+          example: "https://storage.example.com/silabus/mat102-2026.pdf"
 
     ErrorResponse:
       type: object

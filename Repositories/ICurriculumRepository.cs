@@ -14,4 +14,6 @@ public interface ICurriculumRepository
     Task<StudyPlanCourse?> GetStudyPlanCourseAsync(int studyPlanId, int courseId);
     Task<StudentProgress?> GetStudentProgressWithDetailAsync(int studentId, int courseId);
     Task<List<Requirement>> GetCoursePrerequisitesAsync(int courseId);
+    Task<StudentCourseDetail> CreateCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl);
+    Task<StudentCourseDetail> UpsertCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl);
 }
