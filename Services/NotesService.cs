@@ -118,26 +118,28 @@ public class NotesService : INotesService
     {
         try
         {
-            // Validar que la nota existe
             var note = await _notesRepository.GetNoteByIdAsync(noteId);
             if (note == null)
-            {
                 return (false, null, $"Nota con ID {noteId} no encontrada.");
-            }
 
-            // Validar propiedad de la nota
             if (note.UserId != userId)
-            {
                 return (false, null, "No tienes permisos para modificar esta nota.");
-            }
 
-            // Validar que el título no esté vacío
             if (string.IsNullOrWhiteSpace(request.Title))
-            {
                 return (false, null, "El título de la nota es requerido.");
+
+            // Validar que el nuevo curso (si se cambia) sea EnCurso del estudiante
+            if (request.CourseId.HasValue)
+            {
+                var student = await _notesRepository.GetStudentByUserIdAsync(userId);
+                if (student == null)
+                    return (false, null, "No se encontró el perfil de estudiante.");
+
+                var isEnCurso = await _notesRepository.IsStudentCourseEnCursoAsync(student.StudentId, request.CourseId.Value);
+                if (!isEnCurso)
+                    return (false, null, "Solo puedes asociar notas a cursos que están en curso actualmente.");
             }
 
-            // Actualizar los campos de la nota
             note.Title = request.Title;
             note.Content = request.Content;
             note.CourseId = request.CourseId;
