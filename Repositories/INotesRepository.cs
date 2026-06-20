@@ -11,4 +11,5 @@ public interface INotesRepository
     Task<Note?> UpdateNoteAsync(Note note);
     Task<bool> DeleteNoteAsync(int noteId);
     Task<List<Course>> GetStudentStudyPlanCoursesAsync(int studentId);
+    Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId);
 }
