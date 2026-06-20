@@ -52,7 +52,7 @@ public class AdminCareersController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a career for the authenticated administrator's campus.
+    /// Create a session for the authenticated administrator's campus.
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(CareerResponse), StatusCodes.Status201Created)]

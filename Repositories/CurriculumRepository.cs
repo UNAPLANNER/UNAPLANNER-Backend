@@ -88,4 +88,61 @@ public class CurriculumRepository : ICurriculumRepository
             .ThenBy(spc => spc.Course.Name)
             .ToListAsync();
     }
+
+    public async Task<StudyPlanCourse?> GetStudyPlanCourseAsync(int studyPlanId, int courseId)
+    {
+        return await _context.StudyPlanCourses
+            .Include(spc => spc.Course)
+            .FirstOrDefaultAsync(spc => spc.StudyPlanId == studyPlanId && spc.CourseId == courseId && spc.IsStatus);
+    }
+
+    public async Task<StudentProgress?> GetStudentProgressWithDetailAsync(int studentId, int courseId)
+    {
+        return await _context.StudentProgress
+            .Include(sp => sp.StudentCourseDetail)
+            .FirstOrDefaultAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId);
+    }
+
+    public async Task<List<Requirement>> GetCoursePrerequisitesAsync(int courseId)
+    {
+        return await _context.Requirements
+            .Include(r => r.RequiredCourse)
+            .Where(r => r.CourseId == courseId)
+            .ToListAsync();
+    }
+
+    public async Task<StudentCourseDetail> CreateCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl)
+    {
+        var detail = new StudentCourseDetail
+        {
+            StudentProgressId = studentProgressId,
+            ProfessorName = professorName,
+            Classroom = classroom,
+            Schedule = schedule,
+            SyllabusUrl = syllabusUrl
+        };
+        _context.StudentCourseDetails.Add(detail);
+        await _context.SaveChangesAsync();
+        return detail;
+    }
+
+    public async Task<StudentCourseDetail> UpsertCourseDetailAsync(int studentProgressId, string? professorName, string? classroom, string? schedule, string? syllabusUrl)
+    {
+        var existing = await _context.StudentCourseDetails
+            .FirstOrDefaultAsync(d => d.StudentProgressId == studentProgressId);
+
+        if (existing == null)
+        {
+            existing = new StudentCourseDetail { StudentProgressId = studentProgressId };
+            _context.StudentCourseDetails.Add(existing);
+        }
+
+        existing.ProfessorName = professorName;
+        existing.Classroom = classroom;
+        existing.Schedule = schedule;
+        existing.SyllabusUrl = syllabusUrl;
+
+        await _context.SaveChangesAsync();
+        return existing;
+    }
 }
