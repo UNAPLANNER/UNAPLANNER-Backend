@@ -9,6 +9,8 @@ public class StudyPlanCourseDetailResponse
     public int TheoryHours { get; set; }
     public int PracticeHours { get; set; }
     public int LabHours { get; set; }
+    public int Level { get; set; }
+    public int Term { get; set; }
     public bool IsElective { get; set; }
     public string ElectiveType { get; set; } = "Obligatorio";
     public List<StudyPlanCourseRequirementResponse> Prerequisites { get; set; } = new();

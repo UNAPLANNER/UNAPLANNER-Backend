@@ -126,4 +126,47 @@ public class StudyPlansController : ControllerBase
                 new { message = "Error al crear el curso", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Updates a course assigned to a study plan.
+    /// </summary>
+    [HttpPut("{id}/courses/{courseId}")]
+    [ProducesResponseType(typeof(StudyPlanDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateStudyPlanCourse(
+        int id,
+        int courseId,
+        [FromBody] UpdateStudyPlanCourseRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var studyPlan = await _studyPlanService.UpdateStudyPlanCourseAsync(id, courseId, request);
+            return Ok(studyPlan);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al actualizar el curso", error = ex.Message });
+        }
+    }
 }

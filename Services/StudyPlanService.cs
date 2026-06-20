@@ -132,6 +132,71 @@ public class StudyPlanService : IStudyPlanService
         return StudyPlanMapper.ToDetailResponse(updatedStudyPlan);
     }
 
+    public async Task<StudyPlanDetailResponse> UpdateStudyPlanCourseAsync(
+        int studyPlanId,
+        int courseId,
+        UpdateStudyPlanCourseRequest request)
+    {
+        if (!await _studyPlanRepository.StudyPlanExistsAsync(studyPlanId))
+            throw new KeyNotFoundException("No se encontro el plan de estudios solicitado.");
+
+        var planCourse = await _studyPlanRepository.GetStudyPlanCourseForUpdateAsync(studyPlanId, courseId);
+        if (planCourse == null)
+            throw new KeyNotFoundException("No se encontro el curso en el plan de estudios.");
+
+        var code = request.Code.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("El codigo del curso es obligatorio.", nameof(request.Code));
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ArgumentException("El nombre del curso es obligatorio.", nameof(request.Name));
+
+        if (await _studyPlanRepository.CourseCodeExistsExcludingCourseAsync(code, courseId))
+            throw new InvalidOperationException("Ya existe un curso con ese codigo.");
+
+        var electiveType = NormalizeElectiveType(request.ElectiveType, request.IsElective);
+        var prerequisiteCourseIds = request.PrerequisiteCourseIds
+            .Where(requiredCourseId => requiredCourseId > 0 && requiredCourseId != courseId)
+            .Distinct()
+            .ToList();
+
+        if (!await _studyPlanRepository.StudyPlanContainsCoursesAsync(studyPlanId, prerequisiteCourseIds))
+            throw new ArgumentException("Los requisitos deben pertenecer al mismo plan de estudios.", nameof(request.PrerequisiteCourseIds));
+
+        planCourse.Course.Code = code;
+        planCourse.Course.Name = request.Name.Trim();
+        planCourse.Course.Credits = request.Credits;
+        planCourse.Course.TheoryHours = request.TheoryHours;
+        planCourse.Course.PracticeHours = request.PracticeHours;
+        planCourse.Course.LabHours = request.LabHours;
+        planCourse.Course.IsStatus = request.IsStatus;
+
+        planCourse.Levels = request.Level;
+        planCourse.Term = request.Term;
+        planCourse.IsElective = request.IsElective;
+        planCourse.ElectiveType = electiveType;
+        planCourse.IsStatus = request.IsStatus;
+
+        var requirements = prerequisiteCourseIds
+            .Select(requiredCourseId => new Requirement
+            {
+                CourseId = courseId,
+                RequiredCourseId = requiredCourseId,
+                RequirementType = "Prerequisite",
+                CreatedDate = DateTime.Now
+            })
+            .ToList();
+
+        var updatedStudyPlan = await _studyPlanRepository.UpdateCourseAsync(
+            studyPlanId,
+            courseId,
+            planCourse.Course,
+            planCourse,
+            requirements);
+
+        return StudyPlanMapper.ToDetailResponse(updatedStudyPlan);
+    }
+
     private static string NormalizeElectiveType(string electiveType, bool isElective)
     {
         var normalizedElectiveType = string.IsNullOrWhiteSpace(electiveType)
