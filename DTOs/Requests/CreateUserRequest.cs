@@ -22,7 +22,8 @@ public class CreateUserRequest
     [JsonIgnore]
     public int RoleId { get; set; }
 
-    //Apply if the role is Student
+    [Required(ErrorMessage = "El nombre completo es obligatorio")]
+    [StringLength(200, ErrorMessage = "El nombre no puede exceder 200 caracteres")]
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El año es obligatorio")]
@@ -31,7 +32,10 @@ public class CreateUserRequest
     [DefaultValue(2026)]
     public int? EnterYear { get; set; }
 
+    [Required(ErrorMessage = "La carrera es obligatoria")]
     public int? CareerId { get; set; }
+
+    [Required(ErrorMessage = "El plan de estudios es obligatorio")]
     public int? StudyPlanId { get; set; }
 
     /// <summary>

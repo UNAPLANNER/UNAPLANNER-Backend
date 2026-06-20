@@ -41,6 +41,8 @@ builder.Services.AddScoped<IUserStudentRepository, UserStudentRepository>();
 builder.Services.AddScoped<IUserStudentService, UserStudentService>();
 builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
 builder.Services.AddScoped<IStudyPlanRepository, StudyPlanRepository>();
@@ -51,6 +53,18 @@ builder.Services.AddScoped<ICampusService, CampusService>();
 builder.Services.AddScoped<ICampusRepository, CampusRepository>();
 builder.Services.AddScoped<IStudyPlanService, StudyPlanService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Notifications
 builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();

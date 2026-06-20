@@ -62,4 +62,8 @@ public interface ICalendarRepository
     /// <param name="id">The calendar event ID to delete</param>
     /// <returns>True if deleted, false if not found</returns>
     Task<bool> DeleteAsync(int id);
+
+    Task<Calendar?> GetByEvaluationIdAsync(int evaluationId);
+    Task<bool> DeleteByEvaluationIdAsync(int evaluationId);
+    Task<HashSet<int>> GetEvaluationIdsWithReminderAsync(IEnumerable<int> evaluationIds);
 }
