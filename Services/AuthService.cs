@@ -57,26 +57,13 @@ public class AuthService : IAuthService
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
-        var response = new AuthResponse
+        return new AuthResponse
         {
             UserId = user.UserId,
             Email = user.Email,
             Role = user.RoleId == RoleContants.Admin ? "Admin" : "Student",
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
-
-        if (user.RoleId != RoleContants.Admin)
-        {
-            var student = await _studentRepository.GetStudentByUserIdAsync(user.UserId);
-            if (student != null)
-            {
-                response.StudentId = student.StudentId;
-                response.CareerId = student.StudyPlan?.Career?.Id ?? student.CareerId;
-                response.StudyPlanId = student.StudyPlanId;
-            }
-        }
-
-        return response;
     }
     public async Task<UserResponse> RegisterUser(CreateUserRequest request)
     {
