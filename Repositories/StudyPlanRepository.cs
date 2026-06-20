@@ -53,6 +53,15 @@ public class StudyPlanRepository : IStudyPlanRepository
             .AnyAsync(course => course.Code.ToLower() == code.ToLower());
     }
 
+    public async Task<bool> CourseCodeExistsExcludingCourseAsync(string code, int courseId)
+    {
+        return await _context.Courses
+            .AsNoTracking()
+            .AnyAsync(course =>
+                course.Id != courseId &&
+                course.Code.ToLower() == code.ToLower());
+    }
+
     public async Task<bool> StudyPlanExistsAsync(int studyPlanId)
     {
         return await _context.StudyPlans
@@ -79,6 +88,24 @@ public class StudyPlanRepository : IStudyPlanRepository
         return matchingCourseCount == distinctCourseIds.Count;
     }
 
+    public async Task<bool> StudyPlanCourseExistsAsync(int studyPlanId, int courseId)
+    {
+        return await _context.StudyPlanCourses
+            .AsNoTracking()
+            .AnyAsync(planCourse =>
+                planCourse.StudyPlanId == studyPlanId &&
+                planCourse.CourseId == courseId);
+    }
+
+    public async Task<StudyPlanCourse?> GetStudyPlanCourseForUpdateAsync(int studyPlanId, int courseId)
+    {
+        return await _context.StudyPlanCourses
+            .Include(planCourse => planCourse.Course)
+            .FirstOrDefaultAsync(planCourse =>
+                planCourse.StudyPlanId == studyPlanId &&
+                planCourse.CourseId == courseId);
+    }
+
     public async Task<StudyPlan> CreateCourseAsync(
         int studyPlanId,
         Course course,
@@ -98,6 +125,31 @@ public class StudyPlanRepository : IStudyPlanRepository
             requirement.CourseId = course.Id;
             _context.Requirements.Add(requirement);
         }
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return await GetRequiredDetailAsync(studyPlanId);
+    }
+
+    public async Task<StudyPlan> UpdateCourseAsync(
+        int studyPlanId,
+        int courseId,
+        Course course,
+        StudyPlanCourse studyPlanCourse,
+        List<Requirement> requirements)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        _context.Courses.Update(course);
+        _context.StudyPlanCourses.Update(studyPlanCourse);
+
+        var existingRequirements = await _context.Requirements
+            .Where(requirement => requirement.CourseId == courseId)
+            .ToListAsync();
+
+        _context.Requirements.RemoveRange(existingRequirements);
+        _context.Requirements.AddRange(requirements);
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();

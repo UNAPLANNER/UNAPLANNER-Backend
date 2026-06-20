@@ -91,6 +91,8 @@ public static class StudyPlanMapper
             TheoryHours = planCourse.Course.TheoryHours,
             PracticeHours = planCourse.Course.PracticeHours,
             LabHours = planCourse.Course.LabHours,
+            Level = planCourse.Levels,
+            Term = planCourse.Term,
             IsElective = planCourse.IsElective,
             ElectiveType = planCourse.ElectiveType,
             Prerequisites = planCourse.Course.CourseRequirements

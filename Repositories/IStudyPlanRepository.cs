@@ -16,4 +16,13 @@ public interface IStudyPlanRepository
         Course course,
         StudyPlanCourse studyPlanCourse,
         List<Requirement> requirements);
+    Task<bool> CourseCodeExistsExcludingCourseAsync(string code, int courseId);
+    Task<bool> StudyPlanCourseExistsAsync(int studyPlanId, int courseId);
+    Task<StudyPlanCourse?> GetStudyPlanCourseForUpdateAsync(int studyPlanId, int courseId);
+    Task<StudyPlan> UpdateCourseAsync(
+        int studyPlanId,
+        int courseId,
+        Course course,
+        StudyPlanCourse studyPlanCourse,
+        List<Requirement> requirements);
 }
