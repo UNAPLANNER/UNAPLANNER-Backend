@@ -16,4 +16,7 @@ public class EvaluationResponse
     public decimal? Score { get; set; }
 
     public DateTime? Date { get; set; }
+
+    [JsonPropertyName("hasReminder")]
+    public bool HasReminder { get; set; }
 }

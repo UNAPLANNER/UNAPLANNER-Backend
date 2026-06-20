@@ -18,4 +18,7 @@ public class CreateEvaluationRequest
     public decimal Percentage { get; set; }
 
     public DateTime? Date { get; set; }
+
+    [JsonPropertyName("hasReminder")]
+    public bool HasReminder { get; set; } = false;
 }

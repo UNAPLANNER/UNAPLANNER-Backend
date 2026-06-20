@@ -64,6 +64,12 @@ builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenReposi
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 
