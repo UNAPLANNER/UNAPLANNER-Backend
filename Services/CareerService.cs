@@ -31,6 +31,24 @@ public class CareerService : ICareerService
         return CareerMapper.ToResponseList(careers);
     }
 
+    public async Task<List<RegistrationCareerResponse>> GetCareersByCampusForRegistrationAsync(int campusId)
+    {
+        var careers = await _careerRepository.GetActiveByCampusIdAsync(campusId);
+        return careers.Select(c => new RegistrationCareerResponse
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Code = c.Code,
+            StudyPlans = c.StudyPlans.Select(sp => new RegistrationStudyPlanResponse
+            {
+                StudyPlanId = sp.StudyPlanId,
+                Name = sp.Name,
+                Code = sp.Code,
+                ValidYear = sp.ValidYear
+            }).ToList()
+        }).ToList();
+    }
+
     public async Task<List<CareerResponse>> GetCareersByAdminUserIdAsync(int userId)
     {
         var admin = await _profileRepository.GetAdminByUserIdAsync(userId);
