@@ -19,9 +19,6 @@ public class CreateCareerRequest
     [Range(1, 500, ErrorMessage = "El total de creditos debe estar entre 1 y 500")]
     public int TotalCredits { get; set; }
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
     [Required(ErrorMessage = "El grado de la carrera es obligatorio")]
     [StringLength(50, ErrorMessage = "El grado no puede exceder 50 caracteres")]
     [JsonPropertyName("degreeLevel")]

@@ -6,6 +6,7 @@ public interface ICareerRepository
 {
     Task<List<Career>> GetAllAsync();
     Task<List<Career>> GetByCampusIdAsync(int campusId);
+    Task<List<Career>> GetActiveByCampusIdAsync(int campusId);
     Task<Career?> GetByIdAsync(int id);
     Task<Career?> GetEditableByIdAsync(int id);
     Task<bool> ExistsByCodeExcludingIdAsync(int careerId, string code);

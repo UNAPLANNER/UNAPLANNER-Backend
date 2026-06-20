@@ -37,6 +37,16 @@ public class CareerRepository : ICareerRepository
             .ToListAsync();
     }
 
+    public async Task<List<Career>> GetActiveByCampusIdAsync(int campusId)
+    {
+        return await _context.Careers
+            .AsNoTracking()
+            .Include(c => c.StudyPlans.Where(sp => sp.IsStatus))
+            .Where(c => c.CampusId == campusId && c.IsStatus)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
+
     public async Task<Career?> GetByIdAsync(int id)
     {
         return await _context.Careers

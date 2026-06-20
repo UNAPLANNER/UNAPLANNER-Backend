@@ -39,13 +39,24 @@ public class AuthService : IAuthService
             ? "Admin"
             : "Student";
 
+        Student? student = null;
+        if (user.RoleId != RoleContants.Admin)
+            student = await _studentRepository.GetStudentByUserIdAsync(user.UserId);
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.TypeRole),
-            new Claim(ClaimTypes.Role, roleName) 
+            new Claim(ClaimTypes.Role, roleName)
         };
+
+        if (student != null)
+        {
+            claims.Add(new Claim("StudentId", student.StudentId.ToString()));
+            claims.Add(new Claim("CareerId", (student.StudyPlan?.Career?.Id ?? student.CareerId).ToString()));
+            claims.Add(new Claim("StudyPlanId", student.StudyPlanId.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)
@@ -65,15 +76,11 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
 
-        if (user.RoleId != RoleContants.Admin)
+        if (student != null)
         {
-            var student = await _studentRepository.GetStudentByUserIdAsync(user.UserId);
-            if (student != null)
-            {
-                response.StudentId = student.StudentId;
-                response.CareerId = student.StudyPlan?.Career?.Id ?? student.CareerId;
-                response.StudyPlanId = student.StudyPlanId;
-            }
+            response.StudentId = student.StudentId;
+            response.CareerId = student.StudyPlan?.Career?.Id ?? student.CareerId;
+            response.StudyPlanId = student.StudyPlanId;
         }
 
         return response;
@@ -84,6 +91,13 @@ public class AuthService : IAuthService
         if (existingUser != null)
             throw new InvalidOperationException("El correo ya está registrado.");
 
+        if (request.RoleId == RoleContants.Student)
+        {
+            if (!request.CareerId.HasValue)
+                throw new InvalidOperationException("La carrera es obligatoria para registrar un estudiante.");
+            if (!request.StudyPlanId.HasValue)
+                throw new InvalidOperationException("El plan de estudios es obligatorio para registrar un estudiante.");
+        }
 
         var user = new User
         {
@@ -93,28 +107,41 @@ public class AuthService : IAuthService
             IsStatus = true,
             CreatedDate = DateTime.Now
         };
-        var createdUser = await _userRepository.AddUser(user);
 
-        if (request.RoleId == RoleContants.Student)
+        using var transaction = await _userRepository.BeginTransactionAsync();
+        try
         {
-            var student = new Student
+            var createdUser = await _userRepository.AddUser(user);
+
+            if (request.RoleId == RoleContants.Student)
+            {
+                var student = new Student
+                {
+                    UserId = createdUser.UserId,
+                    FullName = request.FullName!.Trim(),
+                    CareerId = request.CareerId!.Value,
+                    StudyPlanId = request.StudyPlanId!.Value,
+                    EnterYear = request.EnterYear!.Value
+                };
+                await _studentRepository.AddStudent(student);
+            }
+
+            await transaction.CommitAsync();
+
+            return new UserResponse
             {
                 UserId = createdUser.UserId,
-                FullName = request.FullName!,
-                CareerId = request.CareerId!.Value,
-                StudyPlanId = request.StudyPlanId!.Value,
-                EnterYear = request.EnterYear!.Value
+                Email = createdUser.Email,
+                RoleId = createdUser.RoleId,
+                Role = createdUser.RoleId == RoleContants.Admin ? "Admin" : "Student",
+                IsStatus = createdUser.IsStatus
             };
-            await _studentRepository.AddStudent(student);
         }
-        return new UserResponse
+        catch
         {
-            UserId = createdUser.UserId,
-            Email = createdUser.Email,
-            RoleId = createdUser.RoleId,
-            Role = createdUser.RoleId == RoleContants.Admin ? "Admin" : "Student",
-            IsStatus = createdUser.IsStatus
-        };
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
 

@@ -24,6 +24,9 @@ public class Calendar
 
     public DateTime CreatedDate { get; set; } = DateTime.Now;
 
+    // Nullable link to auto-synced evaluation (null for manually created events)
+    public int? EvaluationId { get; set; }
+
     // Relaciones
     public User User { get; set; } = null!;
     public Course? Course { get; set; }

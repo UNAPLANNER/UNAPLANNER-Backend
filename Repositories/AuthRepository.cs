@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using UNAPLANNER_API.Data;
 using UNAPLANNER_API.Models.Entities;
 
@@ -31,5 +32,6 @@ public class AuthRepository : IAuthRepository
         return user;
     }
 
-
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+        => await _context.Database.BeginTransactionAsync();
 }

@@ -31,6 +31,24 @@ public class CareerService : ICareerService
         return CareerMapper.ToResponseList(careers);
     }
 
+    public async Task<List<RegistrationCareerResponse>> GetCareersByCampusForRegistrationAsync(int campusId)
+    {
+        var careers = await _careerRepository.GetActiveByCampusIdAsync(campusId);
+        return careers.Select(c => new RegistrationCareerResponse
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Code = c.Code,
+            StudyPlans = c.StudyPlans.Select(sp => new RegistrationStudyPlanResponse
+            {
+                StudyPlanId = sp.StudyPlanId,
+                Name = sp.Name,
+                Code = sp.Code,
+                ValidYear = sp.ValidYear
+            }).ToList()
+        }).ToList();
+    }
+
     public async Task<List<CareerResponse>> GetCareersByAdminUserIdAsync(int userId)
     {
         var admin = await _profileRepository.GetAdminByUserIdAsync(userId);
@@ -100,7 +118,6 @@ public class CareerService : ICareerService
             Code = code,
             Description = description,
             TotalCredits = request.TotalCredits,
-            TotalCredits = totalCredits,
             IsStatus = request.IsStatus,
             CreatedDate = DateTime.Now
         };
@@ -108,6 +125,25 @@ public class CareerService : ICareerService
         var created = await _careerRepository.CreateAsync(career);
         return CareerMapper.ToResponse(created);
     }
+
+    private static string NormalizeCareerCode(string officialResolution)
+        => officialResolution.Trim().ToUpperInvariant();
+
+    private static int GetCareerTotalCredits(string degreeLevel, int? bachelorCredits, int? diplomaCredits, int? degreeCredits)
+    {
+        var level = degreeLevel.Trim().ToUpperInvariant();
+        return level switch
+        {
+            "BACHILLERATO" => bachelorCredits ?? 0,
+            "DIPLOMADO"    => (bachelorCredits ?? 0) + (diplomaCredits ?? 0),
+            _              => (bachelorCredits ?? 0) + (diplomaCredits ?? 0) + (degreeCredits ?? 0)
+        };
+    }
+
+    private static string BuildAdminCareerDescription(
+        string degreeLevel, int planYear, string school,
+        int totalCredits, int? diplomaCredits, string officialResolution)
+        => $"{degreeLevel.Trim()} | Plan {planYear} | {school.Trim()} | {totalCredits} créditos | Resolución: {officialResolution.Trim()}";
 
     public async Task<List<LevelCurriculumResponse>> GetCurriculumByCareerIdAsync(int careerId, int? userId = null)
     {
