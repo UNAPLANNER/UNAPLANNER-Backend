@@ -39,4 +39,20 @@ public class NotificationTokenRepository : INotificationTokenRepository
         _context.NotificationTokens.Update(token);
         return await _context.SaveChangesAsync() > 0;
     }
+
+    public async Task DeactivateOtherTokensAsync(int userId, string activeToken)
+    {
+        var oldTokens = await _context.NotificationTokens
+            .Where(t => t.UserId == userId && t.FcmToken != activeToken && t.IsActive)
+            .ToListAsync();
+
+        foreach (var t in oldTokens)
+        {
+            t.IsActive = false;
+            t.LastUpdated = DateTime.Now;
+        }
+
+        if (oldTokens.Count > 0)
+            await _context.SaveChangesAsync();
+    }
 }

@@ -9,4 +9,5 @@ public interface INotificationTokenRepository
     Task<NotificationToken?> GetByUserIdAndTokenAsync(int userId, string fcmToken);
     Task<List<NotificationToken>> GetActiveTokensByUserIdAsync(int userId);
     Task<bool> UpdateAsync(NotificationToken token);
+    Task DeactivateOtherTokensAsync(int userId, string activeToken);
 }

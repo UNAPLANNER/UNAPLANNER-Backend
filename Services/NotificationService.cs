@@ -45,6 +45,10 @@ public class NotificationService : INotificationService
                 LastUpdated = DateTime.Now
             });
         }
+
+        // Deactivate any previous tokens — after a reinstall Firebase issues a new token
+        // and the old ones are permanently invalid; keeping them causes FCM delivery failures.
+        await _tokenRepository.DeactivateOtherTokensAsync(userId, fcmToken);
     }
 
     public async Task<List<Notification>> GetUserNotificationsAsync(int userId)
@@ -126,15 +130,40 @@ public class NotificationService : INotificationService
         await SendToUserAsync(userId, payload);
     }
 
+    public async Task<object> TestFcmForUserAsync(int userId)
+    {
+        var tokens = await _tokenRepository.GetActiveTokensByUserIdAsync(userId);
+        _logger.LogInformation("TestFCM: userId={UserId} tokens encontrados={Count}", userId, tokens.Count);
+
+        if (tokens.Count == 0)
+            return new { userId, tokensEncontrados = 0, resultado = "Sin tokens activos en la BD" };
+
+        var payload = NotificationPayloadFactory.General("Test Backend FCM", $"Prueba directa desde backend para usuario {userId}");
+        var sent = await _sender.SendToMultipleAsync(tokens.Select(t => t.FcmToken), payload);
+
+        return new
+        {
+            userId,
+            tokensEncontrados = tokens.Count,
+            fcmEnviados = sent,
+            tokens = tokens.Select(t => new { id = t.Id, ultimos10 = t.FcmToken.Length > 10 ? t.FcmToken[^10..] : t.FcmToken, activo = t.IsActive })
+        };
+    }
+
     private async Task SendToUserAsync(int userId, NotificationPayload payload)
     {
         var tokens = await _tokenRepository.GetActiveTokensByUserIdAsync(userId);
+
+        _logger.LogInformation("FCM SendToUser: userId={UserId}, tokens activos={Count}", userId, tokens.Count);
 
         if (tokens.Count == 0)
         {
             _logger.LogWarning("Usuario {UserId} no tiene tokens de dispositivo activos", userId);
             return;
         }
+
+        foreach (var t in tokens)
+            _logger.LogInformation("FCM: Enviando a token ...{Suffix}", t.FcmToken.Length > 10 ? t.FcmToken[^10..] : t.FcmToken);
 
         await _sender.SendToMultipleAsync(tokens.Select(t => t.FcmToken), payload);
     }

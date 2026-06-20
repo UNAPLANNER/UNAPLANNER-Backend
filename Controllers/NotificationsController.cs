@@ -43,6 +43,18 @@ public class NotificationsController : ControllerBase
     }
 
     /// <summary>
+    /// Sends a test FCM push to all active tokens for the user. Use this to diagnose FCM delivery issues.
+    /// Returns how many tokens are in the DB and how many FCM sends succeeded.
+    /// </summary>
+    [HttpPost("test-fcm")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> TestFcm(int userId)
+    {
+        var result = await _notificationService.TestFcmForUserAsync(userId);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Gets all notifications for the user, ordered from most recent to oldest.
     /// </summary>
     [HttpGet]

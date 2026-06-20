@@ -12,4 +12,5 @@ public interface INotificationService
     Task<bool> DeleteAllNotificationsAsync(int userId);
     Task SendActivityReminderAsync(int userId, int calendarId, string activityTitle, string activityType, DateTime activityDate);
     Task SendCourseApprovedAsync(int userId, string courseName);
+    Task<object> TestFcmForUserAsync(int userId);
 }
