@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using UNAPLANNER_API.Data;
+using UNAPLANNER_API.Infrastructure.Firebase;
 using UNAPLANNER_API.Repositories;
 using UNAPLANNER_API.Services;
 using UNAPLANNER_API.Constants;
@@ -34,14 +35,40 @@ builder.Services.AddScoped<INotesRepository, NotesRepository>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<ICampusContactRepository, CampusContactRepository>();
 builder.Services.AddScoped<ICampusContactService, CampusContactService>();
+builder.Services.AddScoped<IStudentGPARepository, StudentGPARepository>();
+builder.Services.AddScoped<IStudentGPAService, StudentGPAService>();
 builder.Services.AddScoped<IUserStudentRepository, UserStudentRepository>();
 builder.Services.AddScoped<IUserStudentService, UserStudentService>();
 builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
+builder.Services.AddScoped<IStudyPlanRepository, StudyPlanRepository>();
+builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
 builder.Services.AddScoped<ICareerService, CareerService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddScoped<IStudyPlanService, StudyPlanService>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Notifications
+builder.Services.AddSingleton<INotificationSender, FirebaseNotificationSender>();
+builder.Services.AddScoped<INotificationTokenRepository, NotificationTokenRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();

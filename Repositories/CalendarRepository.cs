@@ -58,4 +58,46 @@ public class CalendarRepository : ICalendarRepository
     {
         return await _context.Courses.AnyAsync(c => c.Id == courseId);
     }
+
+    public async Task<Calendar> UpdateAsync(Calendar calendarEvent)
+    {
+        _context.Calendars.Update(calendarEvent);
+        await _context.SaveChangesAsync();
+        return calendarEvent;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var calendarEvent = await _context.Calendars.FindAsync(id);
+        if (calendarEvent == null) return false;
+        _context.Calendars.Remove(calendarEvent);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<Calendar?> GetByEvaluationIdAsync(int evaluationId)
+    {
+        return await _context.Calendars
+            .FirstOrDefaultAsync(c => c.EvaluationId == evaluationId);
+    }
+
+    public async Task<HashSet<int>> GetEvaluationIdsWithReminderAsync(IEnumerable<int> evaluationIds)
+    {
+        var ids = evaluationIds.ToList();
+        var result = await _context.Calendars
+            .Where(c => c.EvaluationId != null && ids.Contains(c.EvaluationId.Value))
+            .Select(c => c.EvaluationId!.Value)
+            .ToListAsync();
+        return result.ToHashSet();
+    }
+
+    public async Task<bool> DeleteByEvaluationIdAsync(int evaluationId)
+    {
+        var calendarEvent = await _context.Calendars
+            .FirstOrDefaultAsync(c => c.EvaluationId == evaluationId);
+        if (calendarEvent == null) return false;
+        _context.Calendars.Remove(calendarEvent);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

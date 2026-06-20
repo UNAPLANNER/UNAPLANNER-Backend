@@ -1,0 +1,499 @@
+openapi: 3.0.3
+
+info:
+  title: UNAPLANNER API - Course Detail & Enrolled Detail
+  version: 2.0.0
+  description: |
+    Especificación del endpoint para consultar el detalle completo de un curso
+    seleccionado desde la malla curricular del estudiante. Incluye información
+    académica, prerrequisitos con estado de aprobación y datos de matrícula
+    (profesor, aula, horario) cuando el curso está en curso o aprobado.
+    Campus Sarapiquí — Universidad Nacional de Costa Rica | I Ciclo 2026.
+
+paths:
+  /api/student/{id}/courses/{courseId}/enrolled-detail:
+    post:
+      tags:
+        - Student Curriculum
+      summary: Crear detalle de matrícula de un curso en curso
+      description: |
+        Registra el profesor, aula, horario y sílabo de un curso que el estudiante tiene en estado `EnCurso`.
+        Retorna `409 Conflict` si ya existe un registro; en ese caso usar `PUT` para actualizarlo.
+      operationId: createEnrolledDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolledCourseDetailRequest'
+            example:
+              professorName: "Dr. Carlos Mora"
+              classroom: "Aula 3B"
+              schedule: "Lunes y Miércoles 10:00-11:50"
+              syllabusUrl: "https://storage.example.com/silabus/mat102-2026.pdf"
+      responses:
+        "201":
+          description: Detalle de matrícula creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+        "400":
+          description: El curso no tiene estado 'EnCurso'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Solo se pueden registrar detalles para cursos con estado 'EnCurso'."
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "409":
+          description: Ya existe un detalle de matrícula para este curso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Ya existe un detalle de matrícula para este curso. Use PUT para actualizarlo."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Student Curriculum
+      summary: Actualizar (o crear) detalle de matrícula de un curso en curso
+      description: |
+        Actualiza el profesor, aula, horario y sílabo de un curso en estado `EnCurso`.
+        Si no existe el registro lo crea (upsert). Enviar `null` en un campo lo borra.
+      operationId: updateEnrolledDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolledCourseDetailRequest'
+            examples:
+              actualizar_datos:
+                summary: Actualizar todos los campos
+                value:
+                  professorName: "Msc. Laura Vargas"
+                  classroom: "Aula 5C"
+                  schedule: "Martes y Jueves 14:00-15:50"
+                  syllabusUrl: null
+              limpiar_datos:
+                summary: Borrar todos los campos
+                value:
+                  professorName: null
+                  classroom: null
+                  schedule: null
+                  syllabusUrl: null
+      responses:
+        "200":
+          description: Detalle de matrícula actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+        "400":
+          description: El curso no tiene estado 'EnCurso'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Solo se pueden actualizar detalles para cursos con estado 'EnCurso'."
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/student/{id}/courses/{courseId}/detail:
+    get:
+      tags:
+        - Student Curriculum
+      summary: Obtener detalle completo de un curso
+      description: |
+        Retorna la información completa de un curso de la malla curricular del estudiante.
+
+        **Siempre se retorna:**
+        - Datos académicos: nombre, código, créditos, horas teoría/práctica/laboratorio.
+        - Posición en la malla: nivel, semestre, tipo (obligatorio/electivo).
+        - Estado actual del estudiante: `Pendiente`, `EnCurso`, `Aprobado`, `Reprobado`.
+        - Lista de prerrequisitos y corequisitos con indicación de si han sido aprobados.
+
+        **Solo cuando el estado es `EnCurso` o `Aprobado`:**
+        - Nombre del profesor.
+        - Aula asignada.
+        - Horario de clases.
+        - URL del sílabo (si existe).
+      operationId: getCourseDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del estudiante
+          example: 3
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del curso a consultar
+          example: 15
+      responses:
+        "200":
+          description: Detalle del curso obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+              examples:
+                curso_pendiente:
+                  summary: Curso pendiente sin datos de matrícula
+                  value:
+                    courseId: 20
+                    code: "PRO-201"
+                    name: "Programación I"
+                    credits: 4
+                    theoryHours: 3
+                    practiceHours: 1
+                    labHours: 0
+                    level: 2
+                    term: 1
+                    isElective: false
+                    electiveType: "Obligatorio"
+                    status: "Pendiente"
+                    finalGrade: null
+                    academicTerm: null
+                    termYear: null
+                    prerequisites:
+                      - courseId: 10
+                        code: "MAT-101"
+                        name: "Matemática General I"
+                        requirementType: "Prerequisite"
+                        isPassed: true
+                      - courseId: 11
+                        code: "ESP-101"
+                        name: "Español"
+                        requirementType: "Prerequisite"
+                        isPassed: false
+                    professorName: null
+                    classroom: null
+                    schedule: null
+                    syllabusUrl: null
+                curso_en_curso:
+                  summary: Curso en curso con datos de matrícula
+                  value:
+                    courseId: 12
+                    code: "MAT-102"
+                    name: "Matemática General II"
+                    credits: 4
+                    theoryHours: 3
+                    practiceHours: 2
+                    labHours: 0
+                    level: 1
+                    term: 2
+                    isElective: false
+                    electiveType: "Obligatorio"
+                    status: "EnCurso"
+                    finalGrade: null
+                    academicTerm: 1
+                    termYear: 2026
+                    prerequisites:
+                      - courseId: 10
+                        code: "MAT-101"
+                        name: "Matemática General I"
+                        requirementType: "Prerequisite"
+                        isPassed: true
+                    professorName: "Dr. Carlos Mora"
+                    classroom: "Aula 3B"
+                    schedule: "Lunes y Miércoles 10:00-11:50"
+                    syllabusUrl: "https://storage.example.com/silabus/mat102-2026.pdf"
+                curso_aprobado:
+                  summary: Curso aprobado con nota final
+                  value:
+                    courseId: 10
+                    code: "MAT-101"
+                    name: "Matemática General I"
+                    credits: 4
+                    theoryHours: 3
+                    practiceHours: 2
+                    labHours: 0
+                    level: 1
+                    term: 1
+                    isElective: false
+                    electiveType: "Obligatorio"
+                    status: "Aprobado"
+                    finalGrade: 85.50
+                    academicTerm: 1
+                    termYear: 2024
+                    prerequisites: []
+                    professorName: "Msc. Ana Jiménez"
+                    classroom: "Aula 2A"
+                    schedule: "Martes y Jueves 08:00-09:50"
+                    syllabusUrl: null
+        "404":
+          description: Estudiante o curso no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                estudiante_no_encontrado:
+                  value:
+                    message: "Estudiante con ID 99 no encontrado."
+                curso_no_en_plan:
+                  value:
+                    message: "El curso con ID 50 no pertenece al plan de estudios del estudiante."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Error al obtener el detalle del curso"
+                error: "Unexpected error"
+
+components:
+  schemas:
+    CourseDetailResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          description: ID único del curso
+          example: 15
+        code:
+          type: string
+          description: Código del curso
+          example: "PRO-201"
+        name:
+          type: string
+          description: Nombre del curso
+          example: "Programación I"
+        credits:
+          type: integer
+          description: Créditos del curso
+          example: 4
+        theoryHours:
+          type: integer
+          description: Horas de teoría por semana
+          example: 3
+        practiceHours:
+          type: integer
+          description: Horas de práctica por semana
+          example: 1
+        labHours:
+          type: integer
+          description: Horas de laboratorio por semana
+          example: 0
+        level:
+          type: integer
+          description: Nivel académico del curso en la malla (año)
+          example: 2
+        term:
+          type: integer
+          description: Semestre del curso dentro del nivel (1 o 2)
+          enum: [1, 2]
+          example: 1
+        isElective:
+          type: boolean
+          description: Indica si el curso es electivo
+          example: false
+        electiveType:
+          type: string
+          description: Tipo de curso
+          enum:
+            - Obligatorio
+            - OptativoDisciplinario
+            - OptativoLibre
+          example: "Obligatorio"
+        status:
+          type: string
+          description: Estado actual del estudiante en este curso
+          enum:
+            - Pendiente
+            - EnCurso
+            - Aprobado
+            - Reprobado
+          example: "Pendiente"
+        finalGrade:
+          type: number
+          format: decimal
+          nullable: true
+          description: Nota final obtenida (0-100), null si no aplica
+          example: 85.50
+        academicTerm:
+          type: integer
+          nullable: true
+          description: Semestre académico en que se cursó o está cursando (1 o 2)
+          enum: [1, 2, null]
+          example: 1
+        termYear:
+          type: integer
+          nullable: true
+          description: Año en que se cursó o está cursando
+          example: 2026
+        prerequisites:
+          type: array
+          description: Lista de prerrequisitos y corequisitos del curso
+          items:
+            $ref: '#/components/schemas/PrerequisiteResponse'
+        enrolledDetailId:
+          type: integer
+          nullable: true
+          description: ID del registro de detalle de matrícula, null si no existe
+          example: 7
+        professorName:
+          type: string
+          nullable: true
+          description: Nombre del profesor (solo cuando EnCurso o Aprobado)
+          example: "Dr. Carlos Mora"
+        classroom:
+          type: string
+          nullable: true
+          description: Aula asignada (solo cuando EnCurso o Aprobado)
+          example: "Aula 3B"
+        schedule:
+          type: string
+          nullable: true
+          description: Horario de clases (solo cuando EnCurso o Aprobado)
+          example: "Lunes y Miércoles 10:00-11:50"
+        syllabusUrl:
+          type: string
+          nullable: true
+          description: URL del sílabo del curso (solo cuando EnCurso o Aprobado)
+          example: "https://storage.example.com/silabus/mat102-2026.pdf"
+
+    PrerequisiteResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          description: ID del curso prerrequisito
+          example: 10
+        code:
+          type: string
+          description: Código del curso prerrequisito
+          example: "MAT-101"
+        name:
+          type: string
+          description: Nombre del curso prerrequisito
+          example: "Matemática General I"
+        requirementType:
+          type: string
+          description: Tipo de requisito
+          enum:
+            - Prerequisite
+            - Corequisite
+          example: "Prerequisite"
+        isPassed:
+          type: boolean
+          description: Indica si el estudiante ya aprobó este prerrequisito
+          example: true
+
+    EnrolledCourseDetailRequest:
+      type: object
+      properties:
+        professorName:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Nombre del profesor
+          example: "Dr. Carlos Mora"
+        classroom:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Aula asignada
+          example: "Aula 3B"
+        schedule:
+          type: string
+          nullable: true
+          maxLength: 300
+          description: Horario de clases
+          example: "Lunes y Miércoles 10:00-11:50"
+        syllabusUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: URL del sílabo (PDF)
+          example: "https://storage.example.com/silabus/mat102-2026.pdf"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        error:
+          type: string
+          description: Detalle técnico del error

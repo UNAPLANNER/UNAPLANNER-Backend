@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Responses;
@@ -6,6 +7,7 @@ using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
 
+[Authorize]
 [Route("api/student")]
 [ApiController]
 public class StudentCalendarController : ControllerBase
@@ -15,6 +17,12 @@ public class StudentCalendarController : ControllerBase
     public StudentCalendarController(ICalendarService calendarService)
     {
         _calendarService = calendarService;
+    }
+
+    private bool IsCurrentStudent(int studentId)
+    {
+        var claim = User.FindFirstValue("StudentId");
+        return int.TryParse(claim, out var id) && id == studentId;
     }
 
     /// <summary>
@@ -28,6 +36,7 @@ public class StudentCalendarController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetStudentCalendar(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var calendar = await _calendarService.GetStudentCalendarAsync(id);
@@ -56,6 +65,7 @@ public class StudentCalendarController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetEventDetail(int id, int eventId)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             // Verify the student exists
@@ -90,10 +100,11 @@ public class StudentCalendarController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetCalendarByDateRange(int id, 
-        [FromQuery] DateTime startDate, 
+    public async Task<IActionResult> GetCalendarByDateRange(int id,
+        [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             // Validate date range
@@ -124,9 +135,10 @@ public class StudentCalendarController : ControllerBase
     [ProducesResponseType(typeof(StudentCalendarResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetCalendarByActivityType(int id, 
+    public async Task<IActionResult> GetCalendarByActivityType(int id,
         [FromQuery] string activityType)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             // Validate activity type parameter
@@ -160,7 +172,7 @@ public class StudentCalendarController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateCalendarEvent(int id, [FromBody] CreateCalendarEventRequest request)
     {
-        // Validate the request body
+        if (!IsCurrentStudent(id)) return Forbid();
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
@@ -182,8 +194,81 @@ public class StudentCalendarController : ControllerBase
         {
             // Get the inner exception details for database errors
             var innerError = ex.InnerException?.Message ?? ex.Message;
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Error al crear el evento del calendario", error = innerError });
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing calendar event for a student.
+    /// </summary>
+    /// <param name="id">The student ID</param>
+    /// <param name="eventId">The calendar event ID to update</param>
+    /// <param name="request">The update event request with new data</param>
+    [HttpPut("{id}/calendar/{eventId}")]
+    [ProducesResponseType(typeof(CalendarEventResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateCalendarEvent(int id, int eventId, [FromBody] UpdateCalendarEventRequest request)
+    {
+        if (!IsCurrentStudent(id)) return Forbid();
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var updatedEvent = await _calendarService.UpdateCalendarEventAsync(id, eventId, request);
+
+            if (updatedEvent == null)
+                return NotFound(new { message = $"Estudiante con ID {id} no encontrado" });
+
+            return Ok(updatedEvent);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            var innerError = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al actualizar el evento del calendario", error = innerError });
+        }
+    }
+
+    /// <summary>
+    /// Deletes a calendar event belonging to a student.
+    /// </summary>
+    /// <param name="id">The student ID</param>
+    /// <param name="eventId">The calendar event ID to delete</param>
+    [HttpDelete("{id}/calendar/{eventId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteCalendarEvent(int id, int eventId)
+    {
+        if (!IsCurrentStudent(id)) return Forbid();
+        try
+        {
+            var result = await _calendarService.DeleteCalendarEventAsync(id, eventId);
+
+            if (result == null)
+                return NotFound(new { message = $"Estudiante con ID {id} no encontrado" });
+
+            if (result == false)
+                return NotFound(new { message = $"Evento del calendario con ID {eventId} no encontrado" });
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar el evento del calendario", error = ex.Message });
         }
     }
 }

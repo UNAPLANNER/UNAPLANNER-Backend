@@ -124,6 +124,9 @@ namespace UNAPLANNER_API.Migrations
                     b.Property<DateTime?>("ReminderDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("EvaluationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -734,6 +737,10 @@ namespace UNAPLANNER_API.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ElectiveType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsElective")
                         .HasColumnType("bit");
 
@@ -758,7 +765,9 @@ namespace UNAPLANNER_API.Migrations
 
                     b.ToTable("StudyPlanCourses", t =>
                         {
-                            t.HasCheckConstraint("CK_StudyPlanCourse_Levels", "Levels BETWEEN 1 AND 6");
+                            t.HasCheckConstraint("CK_StudyPlanCourse_ElectiveType", "ElectiveType IN ('Obligatorio', 'OptativoDisciplinario', 'OptativoLibre')");
+
+                            t.HasCheckConstraint("CK_StudyPlanCourse_Levels", "Levels BETWEEN 1 AND 4");
 
                             t.HasCheckConstraint("CK_StudyPlanCourse_Term", "Term IN (1, 2)");
                         });

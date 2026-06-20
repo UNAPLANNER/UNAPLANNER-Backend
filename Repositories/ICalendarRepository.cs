@@ -48,4 +48,22 @@ public interface ICalendarRepository
     /// <param name="calendarEvent">The calendar event to create</param>
     /// <returns>The created calendar event with generated ID</returns>
     Task<Calendar> CreateAsync(Calendar calendarEvent);
+
+    /// <summary>
+    /// Updates an existing calendar event
+    /// </summary>
+    /// <param name="calendarEvent">The calendar event with updated data</param>
+    /// <returns>The updated calendar event</returns>
+    Task<Calendar> UpdateAsync(Calendar calendarEvent);
+
+    /// <summary>
+    /// Deletes a calendar event by its ID
+    /// </summary>
+    /// <param name="id">The calendar event ID to delete</param>
+    /// <returns>True if deleted, false if not found</returns>
+    Task<bool> DeleteAsync(int id);
+
+    Task<Calendar?> GetByEvaluationIdAsync(int evaluationId);
+    Task<bool> DeleteByEvaluationIdAsync(int evaluationId);
+    Task<HashSet<int>> GetEvaluationIdsWithReminderAsync(IEnumerable<int> evaluationIds);
 }
