@@ -41,6 +41,8 @@ builder.Services.AddScoped<IUserStudentRepository, UserStudentRepository>();
 builder.Services.AddScoped<IUserStudentService, UserStudentService>();
 builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
 builder.Services.AddScoped<ICareerService, CareerService>();
