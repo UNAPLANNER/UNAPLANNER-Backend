@@ -11,15 +11,18 @@ public class CareerService : ICareerService
     private readonly ICareerRepository _careerRepository;
     private readonly ICurriculumRepository _curriculumRepository;
     private readonly IProfileRepository _profileRepository;
+    private readonly IStudyPlanService _studyPlanService;
 
     public CareerService(
         ICareerRepository careerRepository,
         ICurriculumRepository curriculumRepository,
-        IProfileRepository profileRepository)
+        IProfileRepository profileRepository,
+        IStudyPlanService studyPlanService)
     {
         _careerRepository = careerRepository;
         _curriculumRepository = curriculumRepository;
         _profileRepository = profileRepository;
+        _studyPlanService = studyPlanService;
     }
 
     public async Task<List<CareerResponse>> GetAllCareersAsync()
@@ -36,6 +39,42 @@ public class CareerService : ICareerService
 
         var careers = await _careerRepository.GetByCampusIdAsync(admin.CampusId);
         return CareerMapper.ToResponseList(careers);
+    }
+
+    public async Task<CareerResponse> UpdateCareerForAdminAsync(int userId, int careerId, UpdateCareerRequest request)
+    {
+        var admin = await _profileRepository.GetAdminByUserIdAsync(userId);
+        if (admin == null)
+            throw new KeyNotFoundException("No se encontro el perfil administrativo del usuario autenticado.");
+
+        var career = await _careerRepository.GetEditableByIdAsync(careerId);
+        if (career == null || career.CampusId != admin.CampusId)
+            throw new KeyNotFoundException("No se encontro la carrera solicitada.");
+
+        var normalizedCode = NormalizeCareerCode(request.OfficialResolution);
+        if (await _careerRepository.ExistsByCodeExcludingIdAsync(careerId, normalizedCode))
+            throw new InvalidOperationException("Ya existe una carrera con ese codigo.");
+
+        var totalCredits = GetCareerTotalCredits(
+            request.DegreeLevel,
+            request.BachelorCredits,
+            request.DiplomaCredits,
+            request.DegreeCredits);
+
+        career.Name = request.Name.Trim();
+        career.Code = normalizedCode;
+        career.Description = BuildAdminCareerDescription(
+            request.DegreeLevel,
+            request.PlanYear,
+            request.School,
+            totalCredits,
+            request.DiplomaCredits,
+            request.OfficialResolution);
+        career.TotalCredits = totalCredits;
+        career.IsStatus = request.IsStatus;
+
+        var updated = await _careerRepository.UpdateAsync(career);
+        return CareerMapper.ToResponse(updated);
     }
 
     public async Task<CareerResponse> CreateCareerForAdminAsync(int userId, CreateCareerRequest request)
@@ -61,6 +100,7 @@ public class CareerService : ICareerService
             Code = code,
             Description = description,
             TotalCredits = request.TotalCredits,
+            TotalCredits = totalCredits,
             IsStatus = request.IsStatus,
             CreatedDate = DateTime.Now
         };

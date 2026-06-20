@@ -52,7 +52,7 @@ public class AdminCareersController : ControllerBase
     }
 
     /// <summary>
-    /// Create a session for the authenticated administrator's campus.
+    /// Creates a career for the authenticated administrator's campus.
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(CareerResponse), StatusCodes.Status201Created)]
@@ -89,6 +89,47 @@ public class AdminCareersController : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Error al crear la carrera", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing career for the authenticated administrator's campus.
+    /// </summary>
+    [HttpPut("{id}")]
+    [ProducesResponseType(typeof(CareerResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateCareer(int id, [FromBody] UpdateCareerRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { message = "No se pudo identificar el usuario autenticado." });
+            }
+
+            var career = await _careerService.UpdateCareerForAdminAsync(currentUserId.Value, id, request);
+            return Ok(career);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al actualizar la carrera", error = ex.Message });
         }
     }
 
