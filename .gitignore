@@ -52,3 +52,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Firebase service account key — never commit, Google auto-revokes keys found in repos
+firebase/firebase-key.json

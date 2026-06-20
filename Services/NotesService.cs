@@ -65,6 +65,16 @@ public class NotesService : INotesService
                 return (false, null, "El título de la nota es requerido.");
             }
 
+            // Si se asocia a un curso, validar que esté EnCurso para este estudiante
+            if (request.CourseId.HasValue)
+            {
+                var isEnCurso = await _notesRepository.IsStudentCourseEnCursoAsync(studentId, request.CourseId.Value);
+                if (!isEnCurso)
+                {
+                    return (false, null, "Solo puedes agregar notas a cursos que están en curso actualmente.");
+                }
+            }
+
             // Crear la nota asociada al usuario del estudiante
             var note = new Note
             {
@@ -104,24 +114,32 @@ public class NotesService : INotesService
         }
     }
 
-    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, UpdateNoteRequest request)
+    public async Task<(bool Success, NoteResponse? Note, string? ErrorMessage)> UpdateNoteAsync(int noteId, int userId, UpdateNoteRequest request)
     {
         try
         {
-            // Validar que la nota existe
             var note = await _notesRepository.GetNoteByIdAsync(noteId);
             if (note == null)
-            {
                 return (false, null, $"Nota con ID {noteId} no encontrada.");
-            }
 
-            // Validar que el título no esté vacío
+            if (note.UserId != userId)
+                return (false, null, "No tienes permisos para modificar esta nota.");
+
             if (string.IsNullOrWhiteSpace(request.Title))
-            {
                 return (false, null, "El título de la nota es requerido.");
+
+            // Validar que el nuevo curso (si se cambia) sea EnCurso del estudiante
+            if (request.CourseId.HasValue)
+            {
+                var student = await _notesRepository.GetStudentByUserIdAsync(userId);
+                if (student == null)
+                    return (false, null, "No se encontró el perfil de estudiante.");
+
+                var isEnCurso = await _notesRepository.IsStudentCourseEnCursoAsync(student.StudentId, request.CourseId.Value);
+                if (!isEnCurso)
+                    return (false, null, "Solo puedes asociar notas a cursos que están en curso actualmente.");
             }
 
-            // Actualizar los campos de la nota
             note.Title = request.Title;
             note.Content = request.Content;
             note.CourseId = request.CourseId;

@@ -1,0 +1,179 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using UNAPLANNER_API.DTOs.Requests;
+using UNAPLANNER_API.DTOs.Responses;
+using UNAPLANNER_API.Services;
+
+namespace UNAPLANNER_API.Controllers;
+
+[Route("api/users/{userId}/notifications")]
+[ApiController]
+[Authorize]
+public class NotificationsController : ControllerBase
+{
+    private readonly INotificationService _notificationService;
+
+    public NotificationsController(INotificationService notificationService)
+    {
+        _notificationService = notificationService;
+    }
+
+    /// <summary>
+    /// Register or update the user's device FCM token to receive push notifications.
+    /// </summary>
+    [HttpPost("device-token")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RegisterDeviceToken(int userId, [FromBody] RegisterDeviceTokenRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            await _notificationService.SaveDeviceTokenAsync(userId, request.FcmToken, request.DeviceName);
+            return Ok(new { message = "Token de dispositivo registrado correctamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al registrar el token del dispositivo", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Sends a test FCM push to all active tokens for the user. Use this to diagnose FCM delivery issues.
+    /// Returns how many tokens are in the DB and how many FCM sends succeeded.
+    /// </summary>
+    [HttpPost("test-fcm")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> TestFcm(int userId)
+    {
+        var result = await _notificationService.TestFcmForUserAsync(userId);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Gets all notifications for the user, ordered from most recent to oldest.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<NotificationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetNotifications(int userId)
+    {
+        try
+        {
+            var notifications = await _notificationService.GetUserNotificationsAsync(userId);
+
+            var response = notifications.Select(n => new NotificationResponse
+            {
+                Id          = n.Id,
+                Title       = n.Title,
+                Message     = n.Message,
+                Type        = n.Type,
+                RelatedId   = n.RelatedId,
+                IsRead      = n.IsRead,
+                CreatedDate = n.CreatedDate,
+                SentDate    = n.SentDate
+            }).ToList();
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al obtener las notificaciones", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Marks a specific notification as read.
+    /// </summary>
+    [HttpPatch("{notificationId}/read")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> MarkAsRead(int userId, int notificationId)
+    {
+        try
+        {
+            var result = await _notificationService.MarkAsReadAsync(notificationId);
+
+            if (!result)
+                return NotFound(new { message = $"Notificación con ID {notificationId} no encontrada" });
+
+            return Ok(new { message = "Notificación marcada como leída" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al marcar la notificación como leída", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Marks all notifications for the user as read.
+    /// </summary>
+    [HttpPatch("read-all")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> MarkAllAsRead(int userId)
+    {
+        try
+        {
+            await _notificationService.MarkAllAsReadAsync(userId);
+            return Ok(new { message = "Todas las notificaciones marcadas como leídas" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al marcar las notificaciones como leídas", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Deletes a specific notification belonging to the user.
+    /// </summary>
+    [HttpDelete("{notificationId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteNotification(int userId, int notificationId)
+    {
+        try
+        {
+            var result = await _notificationService.DeleteNotificationAsync(userId, notificationId);
+
+            if (!result)
+                return NotFound(new { message = $"Notificación {notificationId} no encontrada para el usuario {userId}" });
+
+            return Ok(new { message = "Notificación eliminada correctamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar la notificación", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Deletes all notifications for the user.
+    /// </summary>
+    [HttpDelete]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteAllNotifications(int userId)
+    {
+        try
+        {
+            await _notificationService.DeleteAllNotificationsAsync(userId);
+            return Ok(new { message = "Todas las notificaciones eliminadas correctamente" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar las notificaciones", error = ex.Message });
+        }
+    }
+}
