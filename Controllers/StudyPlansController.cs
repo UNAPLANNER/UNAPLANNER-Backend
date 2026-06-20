@@ -169,4 +169,31 @@ public class StudyPlansController : ControllerBase
                 new { message = "Error al actualizar el curso", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Deletes a course from a study plan.
+    /// </summary>
+    [HttpDelete("{id}/courses/{courseId}")]
+    [ProducesResponseType(typeof(StudyPlanDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteStudyPlanCourse(int id, int courseId)
+    {
+        try
+        {
+            var studyPlan = await _studyPlanService.DeleteStudyPlanCourseAsync(id, courseId);
+            return Ok(studyPlan);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al eliminar el curso", error = ex.Message });
+        }
+    }
 }

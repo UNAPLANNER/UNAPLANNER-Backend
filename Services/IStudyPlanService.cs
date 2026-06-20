@@ -9,4 +9,5 @@ public interface IStudyPlanService
     Task<StudyPlanDetailResponse> CreateStudyPlanAsync(CreateStudyPlanRequest request);
     Task<StudyPlanDetailResponse> CreateStudyPlanCourseAsync(int studyPlanId, CreateStudyPlanCourseRequest request);
     Task<StudyPlanDetailResponse> UpdateStudyPlanCourseAsync(int studyPlanId, int courseId, UpdateStudyPlanCourseRequest request);
+    Task<StudyPlanDetailResponse> DeleteStudyPlanCourseAsync(int studyPlanId, int courseId);
 }

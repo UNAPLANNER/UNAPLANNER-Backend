@@ -157,6 +157,36 @@ public class StudyPlanRepository : IStudyPlanRepository
         return await GetRequiredDetailAsync(studyPlanId);
     }
 
+    public async Task<StudyPlan> DeleteCourseAsync(int studyPlanId, int courseId)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var planCourse = await _context.StudyPlanCourses
+            .Include(studyPlanCourse => studyPlanCourse.Course)
+            .FirstOrDefaultAsync(studyPlanCourse =>
+                studyPlanCourse.StudyPlanId == studyPlanId &&
+                studyPlanCourse.CourseId == courseId);
+
+        if (planCourse == null)
+            throw new KeyNotFoundException("No se encontro el curso en el plan de estudios.");
+
+        planCourse.IsStatus = false;
+        planCourse.Course.IsStatus = false;
+
+        var relatedRequirements = await _context.Requirements
+            .Where(requirement =>
+                requirement.CourseId == courseId ||
+                requirement.RequiredCourseId == courseId)
+            .ToListAsync();
+
+        _context.Requirements.RemoveRange(relatedRequirements);
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return await GetRequiredDetailAsync(studyPlanId);
+    }
+
     private async Task<StudyPlan> GetRequiredDetailAsync(int studyPlanId)
     {
         return await _context.StudyPlans

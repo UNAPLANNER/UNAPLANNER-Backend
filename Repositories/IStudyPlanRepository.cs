@@ -25,4 +25,5 @@ public interface IStudyPlanRepository
         Course course,
         StudyPlanCourse studyPlanCourse,
         List<Requirement> requirements);
+    Task<StudyPlan> DeleteCourseAsync(int studyPlanId, int courseId);
 }

@@ -197,6 +197,18 @@ public class StudyPlanService : IStudyPlanService
         return StudyPlanMapper.ToDetailResponse(updatedStudyPlan);
     }
 
+    public async Task<StudyPlanDetailResponse> DeleteStudyPlanCourseAsync(int studyPlanId, int courseId)
+    {
+        if (!await _studyPlanRepository.StudyPlanExistsAsync(studyPlanId))
+            throw new KeyNotFoundException("No se encontro el plan de estudios solicitado.");
+
+        if (!await _studyPlanRepository.StudyPlanCourseExistsAsync(studyPlanId, courseId))
+            throw new KeyNotFoundException("No se encontro el curso en el plan de estudios.");
+
+        var updatedStudyPlan = await _studyPlanRepository.DeleteCourseAsync(studyPlanId, courseId);
+        return StudyPlanMapper.ToDetailResponse(updatedStudyPlan);
+    }
+
     private static string NormalizeElectiveType(string electiveType, bool isElective)
     {
         var normalizedElectiveType = string.IsNullOrWhiteSpace(electiveType)
