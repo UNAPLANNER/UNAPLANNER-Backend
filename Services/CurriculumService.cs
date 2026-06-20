@@ -15,10 +15,8 @@ public class CurriculumService : ICurriculumService
         _curriculumRepository = curriculumRepository;
     }
 
-    // Tries StudentId first, falls back to UserId so the app can send either without breaking.
     private async Task<Student?> ResolveStudentAsync(int id)
-        => await _curriculumRepository.GetStudentByIdAsync(id)
-           ?? await _curriculumRepository.GetStudentByUserIdAsync(id);
+        => await _curriculumRepository.GetStudentByIdAsync(id);
 
     public async Task<(bool Success, StudentCurriculumResponse? Curriculum, string? ErrorMessage)> GetStudentCurriculumAsync(int studentId)
     {

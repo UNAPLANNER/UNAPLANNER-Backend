@@ -39,13 +39,24 @@ public class AuthService : IAuthService
             ? "Admin"
             : "Student";
 
+        Student? student = null;
+        if (user.RoleId != RoleContants.Admin)
+            student = await _studentRepository.GetStudentByUserIdAsync(user.UserId);
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.TypeRole),
-            new Claim(ClaimTypes.Role, roleName) 
+            new Claim(ClaimTypes.Role, roleName)
         };
+
+        if (student != null)
+        {
+            claims.Add(new Claim("StudentId", student.StudentId.ToString()));
+            claims.Add(new Claim("CareerId", (student.StudyPlan?.Career?.Id ?? student.CareerId).ToString()));
+            claims.Add(new Claim("StudyPlanId", student.StudyPlanId.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)
@@ -65,15 +76,11 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token)
         };
 
-        if (user.RoleId != RoleContants.Admin)
+        if (student != null)
         {
-            var student = await _studentRepository.GetStudentByUserIdAsync(user.UserId);
-            if (student != null)
-            {
-                response.StudentId = student.StudentId;
-                response.CareerId = student.StudyPlan?.Career?.Id ?? student.CareerId;
-                response.StudyPlanId = student.StudyPlanId;
-            }
+            response.StudentId = student.StudentId;
+            response.CareerId = student.StudyPlan?.Career?.Id ?? student.CareerId;
+            response.StudyPlanId = student.StudyPlanId;
         }
 
         return response;

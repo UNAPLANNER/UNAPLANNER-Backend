@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
@@ -5,6 +7,7 @@ using UNAPLANNER_API.Services;
 
 namespace UNAPLANNER_API.Controllers;
 
+[Authorize]
 [Route("api/student")]
 [ApiController]
 public class StudentCurriculumController : ControllerBase
@@ -16,6 +19,12 @@ public class StudentCurriculumController : ControllerBase
     {
         _curriculumService = curriculumService;
         _logger = logger;
+    }
+
+    private bool IsCurrentStudent(int studentId)
+    {
+        var claim = User.FindFirstValue("StudentId");
+        return int.TryParse(claim, out var id) && id == studentId;
     }
 
     /// <summary>
@@ -30,6 +39,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetStudentCurriculum(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetStudentCurriculumAsync(id);
@@ -57,6 +67,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetStudentCurriculumCourses(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetStudentCoursesWithProgressAsync(id);
@@ -85,6 +96,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetCourseDetail(int id, int courseId)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _curriculumService.GetCourseDetailAsync(id, courseId);
@@ -113,6 +125,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateEnrolledDetail(int id, int courseId, [FromBody] EnrolledCourseDetailRequest request)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
@@ -149,6 +162,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateEnrolledDetail(int id, int courseId, [FromBody] EnrolledCourseDetailRequest request)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
@@ -186,6 +200,7 @@ public class StudentCurriculumController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateCourseStatus(int id, int courseId, [FromBody] UpdateCourseStatusRequest request)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("PUT student/{Id}/courses/{CourseId} — validación fallida: {Errors}",

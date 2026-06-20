@@ -16,10 +16,8 @@ public class CalendarService : ICalendarService
         _studentRepository = studentRepository;
     }
 
-    // Tries StudentId first, falls back to UserId (same pattern as CurriculumService).
     private async Task<Models.Entities.Student?> ResolveStudentAsync(int id)
-        => await _studentRepository.GetStudentByIdAsync(id)
-           ?? await _studentRepository.GetStudentByUserIdAsync(id);
+        => await _studentRepository.GetStudentByIdAsync(id);
 
     public async Task<StudentCalendarResponse?> GetStudentCalendarAsync(int studentId)
     {

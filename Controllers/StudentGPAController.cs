@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using UNAPLANNER_API.DTOs.Requests;
 using UNAPLANNER_API.DTOs.Responses;
@@ -20,15 +21,19 @@ public class StudentController : ControllerBase
         _serviceGPA = serviceGPA;
     }
 
-    
-    /** Gets student GPA based on approved courses
-     <param name="id">Student ID</param>**/
+    private bool IsCurrentStudent(int studentId)
+    {
+        var claim = User.FindFirstValue("StudentId");
+        return int.TryParse(claim, out var id) && id == studentId;
+    }
+
     [HttpGet("{id}/gpa")]
     [ProducesResponseType(typeof(StudentGPAResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetGpa(int id)
     {
+        if (!IsCurrentStudent(id)) return Forbid();
         try
         {
             var result = await _serviceGPA.GetGpaAsync(id);
