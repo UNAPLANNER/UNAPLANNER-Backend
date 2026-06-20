@@ -123,17 +123,5 @@ public class NotesRepository : INotesRepository
         return await _context.StudentProgress
             .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
     }
-
-    public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)
-    {
-        return await _context.StudentProgress
-            .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
-    }
-
-    public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)
-    {
-        return await _context.StudentProgress
-            .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
-    }
 }
 
