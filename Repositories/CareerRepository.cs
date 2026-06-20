@@ -37,11 +37,47 @@ public class CareerRepository : ICareerRepository
             .ToListAsync();
     }
 
+    public async Task<List<Career>> GetActiveByCampusIdAsync(int campusId)
+    {
+        return await _context.Careers
+            .AsNoTracking()
+            .Include(c => c.StudyPlans.Where(sp => sp.IsStatus))
+            .Where(c => c.CampusId == campusId && c.IsStatus)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
+
     public async Task<Career?> GetByIdAsync(int id)
     {
         return await _context.Careers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.IsStatus);
+    }
+
+    public async Task<Career?> GetEditableByIdAsync(int id)
+    {
+        return await _context.Careers
+            .Include(c => c.Campus)
+            .Include(c => c.StudyPlans)
+                .ThenInclude(sp => sp.StudyPlanCourses)
+            .FirstOrDefaultAsync(c => c.Id == id);
+    }
+
+    public async Task<bool> ExistsByCodeExcludingIdAsync(int careerId, string code)
+    {
+        return await _context.Careers
+            .AsNoTracking()
+            .AnyAsync(c =>
+                c.Id != careerId &&
+                c.Code.ToLower() == code.ToLower());
+    }
+
+    public async Task<Career> UpdateAsync(Career career)
+    {
+        _context.Careers.Update(career);
+        await _context.SaveChangesAsync();
+
+        return career;
     }
 
     public async Task<bool> ExistsByNameAsync(int campusId, string name)

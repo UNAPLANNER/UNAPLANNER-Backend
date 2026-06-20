@@ -111,11 +111,14 @@ public class AuthController : ControllerBase
                 message = "Estudiante creado exitosamente",
                 data = response
             });
-
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al registrar el estudiante.", detail = ex.Message });
         }
     }
 

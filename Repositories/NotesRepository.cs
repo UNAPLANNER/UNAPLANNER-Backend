@@ -19,6 +19,12 @@ public class NotesRepository : INotesRepository
             .FirstOrDefaultAsync(s => s.StudentId == studentId);
     }
 
+    public async Task<Student?> GetStudentByUserIdAsync(int userId)
+    {
+        return await _context.Students
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+    }
+
     public async Task<Note?> GetNoteByIdAsync(int noteId)
     {
         return await _context.Notes
@@ -103,15 +109,25 @@ public class NotesRepository : INotesRepository
 
     public async Task<List<Course>> GetStudentStudyPlanCoursesAsync(int studentId)
     {
-        var courses = await _context.StudentProgress
+        return await _context.StudentProgress
             .Where(sp => sp.StudentId == studentId && sp.Status == "EnCurso")
             .Include(sp => sp.Course)
             .Select(sp => sp.Course)
-            .Where(c => c.IsStatus)
+            .Where(c => c != null && c.IsStatus)
             .OrderBy(c => c.Name)
             .ToListAsync();
+    }
 
-        return courses;
+    public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)
+    {
+        return await _context.StudentProgress
+            .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
+    }
+
+    public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)
+    {
+        return await _context.StudentProgress
+            .AnyAsync(sp => sp.StudentId == studentId && sp.CourseId == courseId && sp.Status == "EnCurso");
     }
 
     public async Task<bool> IsStudentCourseEnCursoAsync(int studentId, int courseId)

@@ -4,7 +4,7 @@ using UNAPLANNER_API.Models.Entities;
 using UNAPLANNER_API.Repositories;
 
 namespace UNAPLANNER_API.Services;
-
+// Service for managing evaluations in the UNAPLANNER API
 public class EvaluationService : IEvaluationService
 {
     private static readonly HashSet<string> ValidEvaluationTypes =
@@ -61,7 +61,7 @@ public class EvaluationService : IEvaluationService
             return (false, null, $"Error al obtener las evaluaciones: {ex.Message}");
         }
     }
-
+//Method to create a new evaluation for a student's course, validating input and ensuring percentage limits are respected
     public async Task<(bool Success, EvaluationResponse? Evaluation, string? ErrorMessage)> CreateEvaluationAsync(int courseId, int studentId, CreateEvaluationRequest request)
     {
         try
@@ -106,7 +106,7 @@ public class EvaluationService : IEvaluationService
             return (false, null, $"Error al crear la evaluación: {ex.Message}");
         }
     }
-
+//Method to update an existing evaluation, validating input and ensuring percentage limits are respected, and checking permissions
     public async Task<(bool Success, EvaluationResponse? Evaluation, string? ErrorMessage)> UpdateEvaluationAsync(int evaluationId, int studentId, UpdateEvaluationRequest request)
     {
         try
@@ -148,7 +148,7 @@ public class EvaluationService : IEvaluationService
             return (false, null, $"Error al actualizar la evaluación: {ex.Message}");
         }
     }
-
+//Method to delete an evaluation, checking permissions and handling errors
     public async Task<(bool Success, string? ErrorMessage)> DeleteEvaluationAsync(int evaluationId, int studentId)
     {
         try
