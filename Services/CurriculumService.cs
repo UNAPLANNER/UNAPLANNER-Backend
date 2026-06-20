@@ -194,18 +194,26 @@ public class CurriculumService : ICurriculumService
     {
         try
         {
-            var student = await ResolveStudentAsync(studentId);
+            var student = await _curriculumRepository.GetStudentByIdAsync(studentId);
             if (student == null)
                 return (false, null, $"Estudiante con ID {studentId} no encontrado.");
 
-            var sid = student.StudentId;
             var spc = await _curriculumRepository.GetStudyPlanCourseAsync(student.StudyPlanId, courseId);
             if (spc == null)
                 return (false, null, $"El curso con ID {courseId} no pertenece al plan de estudios del estudiante.");
 
-            var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(sid, courseId);
+            var progress = await _curriculumRepository.GetStudentProgressWithDetailAsync(studentId, courseId);
             var prerequisites = await _curriculumRepository.GetCoursePrerequisitesAsync(courseId);
-            var prereqProgressDict = await BuildPrereqProgressDict(sid, prerequisites);
+
+            Dictionary<int, StudentProgress> prereqProgressDict = new();
+            if (prerequisites.Count > 0)
+            {
+                var allProgress = await _curriculumRepository.GetStudentProgressAsync(studentId);
+                var prereqIds = prerequisites.Select(r => r.RequiredCourseId).ToHashSet();
+                prereqProgressDict = allProgress
+                    .Where(p => prereqIds.Contains(p.CourseId))
+                    .ToDictionary(p => p.CourseId);
+            }
 
             var detail = CurriculumMapper.ToCourseDetailResponse(spc, progress, prerequisites, prereqProgressDict);
             return (true, detail, null);

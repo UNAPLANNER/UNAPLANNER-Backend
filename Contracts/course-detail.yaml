@@ -1,8 +1,8 @@
 openapi: 3.0.3
 
 info:
-  title: UNAPLANNER API - Course Detail & Enrolled Detail
-  version: 2.0.0
+  title: UNAPLANNER API - Course Detail
+  version: 1.0.0
   description: |
     Especificación del endpoint para consultar el detalle completo de un curso
     seleccionado desde la malla curricular del estudiante. Incluye información
