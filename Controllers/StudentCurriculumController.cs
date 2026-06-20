@@ -74,6 +74,34 @@ public class StudentCurriculumController : ControllerBase
     }
 
     /// <summary>
+    /// Gets the full detail of a specific course for the student.
+    /// Includes basic info, hours, prerequisites with pass status, and enrollment details if enrolled.
+    /// </summary>
+    /// <param name="id">Student ID</param>
+    /// <param name="courseId">Course ID</param>
+    [HttpGet("{id}/courses/{courseId}/detail")]
+    [ProducesResponseType(typeof(CourseDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetCourseDetail(int id, int courseId)
+    {
+        try
+        {
+            var result = await _curriculumService.GetCourseDetailAsync(id, courseId);
+
+            if (!result.Success)
+                return NotFound(new { message = result.ErrorMessage });
+
+            return Ok(result.Detail);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Error al obtener el detalle del curso", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Updates the status of a course in the student's curriculum.
     /// Creates a progress record if it doesn't exist.
     /// </summary>

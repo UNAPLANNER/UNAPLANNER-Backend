@@ -9,7 +9,8 @@ public class CareerMapper
     {
         var currentStudyPlan = career.StudyPlans
             .Where(studyPlan => studyPlan.IsStatus)
-            .OrderByDescending(studyPlan => studyPlan.ValidYear)
+            .OrderByDescending(studyPlan => studyPlan.StudyPlanCourses.Any(studyPlanCourse => studyPlanCourse.IsStatus))
+            .ThenByDescending(studyPlan => studyPlan.ValidYear)
             .ThenByDescending(studyPlan => studyPlan.CreatedDate)
             .FirstOrDefault();
 
