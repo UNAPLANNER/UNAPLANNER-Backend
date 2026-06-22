@@ -99,7 +99,7 @@ public class EvaluationService : IEvaluationService
             if (request.HasReminder && created.Date.HasValue)
                 await SyncCalendarCreateAsync(studentId, courseId, created);
 
-            return (true, MapToResponse(created), null);
+            return (true, MapToResponse(created, request.HasReminder), null);
         }
         catch (Exception ex)
         {
@@ -141,7 +141,7 @@ public class EvaluationService : IEvaluationService
 
             await SyncCalendarUpdateAsync(studentId, updated, request.HasReminder);
 
-            return (true, MapToResponse(updated), null);
+            return (true, MapToResponse(updated, request.HasReminder), null);
         }
         catch (Exception ex)
         {
