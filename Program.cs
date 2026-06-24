@@ -49,6 +49,8 @@ builder.Services.AddScoped<IStudyPlanRepository, StudyPlanRepository>();
 builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
 builder.Services.AddScoped<ICareerService, CareerService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddScoped<ICampusService, CampusService>();
+builder.Services.AddScoped<ICampusRepository, CampusRepository>();
 builder.Services.AddScoped<IStudyPlanService, StudyPlanService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 
